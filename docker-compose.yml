@@ -1,0 +1,53 @@
+# ──────────────────────────────────────────────
+# Docker Compose — Envejecer con Bienestar Backend
+# Levanta: Flask API + PostgreSQL
+# ──────────────────────────────────────────────
+
+services:
+  # ── Base de datos PostgreSQL ──────────────
+  db:
+    image: postgres:16-alpine
+    container_name: ecb_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: envejecer_bienestar
+      POSTGRES_USER: ecb_user
+      POSTGRES_PASSWORD: ecb_secret_2024
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ecb_user -d envejecer_bienestar"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── Backend Flask API ─────────────────────
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ecb_api
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=development
+      - DATABASE_URL=postgresql://ecb_user:ecb_secret_2024@db:5432/envejecer_bienestar
+      - JWT_SECRET_KEY=super-secret-jwt-key-cambiar-en-produccion
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    command: >
+      sh -c "python -c 'from app import create_app; from app.extensions import db; app = create_app(); app.app_context().push(); db.create_all(); print(\"✅ Tablas creadas\")' &&
+             flask db init 2>/dev/null || true &&
+             flask db migrate -m 'init' 2>/dev/null || true &&
+             flask db upgrade 2>/dev/null || true &&
+             gunicorn --bind 0.0.0.0:5000 --workers 2 --reload --timeout 120 run:app"
+
+volumes:
+  postgres_data:
+    name: ecb_postgres_data

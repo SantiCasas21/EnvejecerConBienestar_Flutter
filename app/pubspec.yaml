@@ -1,0 +1,59 @@
+name: envejecer_con_bienestar
+description: "Aplicación móvil para el bienestar integral de adultos mayores."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Iconos
+  cupertino_icons: ^1.0.8
+
+  # Estado (Riverpod)
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+
+  # Navegación
+  go_router: ^14.8.1
+
+  # Red / HTTP
+  dio: ^5.7.0
+
+  # Almacenamiento local
+  shared_preferences: ^2.5.3
+
+  # Tipografía (Google Fonts — Nunito)
+  google_fonts: ^6.2.1
+
+  # Utilidades
+  url_launcher: ^6.3.1
+  intl: ^0.19.0
+
+  # Modelos y Serialización
+  freezed_annotation: ^2.4.1
+  json_annotation: ^4.8.1
+
+  # Seguridad
+  flutter_secure_storage: ^9.0.0
+  pdf: ^3.13.0
+  printing: ^5.15.0
+  flutter_local_notifications: ^22.3.0
+  flutter_contacts: ^2.3.1
+  share_plus: ^12.0.2
+  permission_handler: ^13.0.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.5.4
+  freezed: ^2.5.8
+  json_serializable: ^6.9.5
+  riverpod_generator: ^2.6.4
+
+flutter:
+  uses-material-design: true
