@@ -5,6 +5,13 @@ import '../../../../config/theme/app_typography.dart';
 class HabeasDataDialog extends StatelessWidget {
   const HabeasDataDialog({super.key});
 
+  static Future<void> mostrar(BuildContext context) {
+    return showDialog<void>(
+      context: context,
+      builder: (_) => const HabeasDataDialog(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(

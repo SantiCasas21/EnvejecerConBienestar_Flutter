@@ -18,6 +18,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  String _rolSeleccionado = 'adulto_mayor'; // 'adulto_mayor' o 'cuidador'
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
@@ -36,6 +37,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             _nombreController.text.trim(),
             _emailController.text.trim(),
             _passwordController.text,
+            rol: _rolSeleccionado,
           );
       if (success && mounted) {
         context.go('/');
@@ -134,6 +136,183 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ),
                   const SizedBox(height: 20),
                 ],
+                // Selector visual de rol (Tarjetas grandes >= 64dp, textos >= 18sp)
+                Text(
+                  '¿Cuál es tu rol?',
+                  style: AppTypography.subtitulo().copyWith(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 10),
+
+                // Tarjeta: Adulto Mayor
+                InkWell(
+                  onTap: () => setState(() => _rolSeleccionado = 'adulto_mayor'),
+                  borderRadius: BorderRadius.circular(18),
+                  child: Container(
+                    constraints: const BoxConstraints(minHeight: 74),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: _rolSeleccionado == 'adulto_mayor'
+                          ? AppColors.primaryLight.withValues(alpha: 0.5)
+                          : AppColors.cardBackground,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: _rolSeleccionado == 'adulto_mayor'
+                            ? AppColors.primaryTeal
+                            : AppColors.border,
+                        width: _rolSeleccionado == 'adulto_mayor' ? 2.5 : 1.5,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: _rolSeleccionado == 'adulto_mayor'
+                                ? AppColors.primaryTeal
+                                : AppColors.backgroundSecondary,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: Text(
+                              '👴',
+                              style: TextStyle(
+                                fontSize: 24,
+                                color: _rolSeleccionado == 'adulto_mayor'
+                                    ? Colors.white
+                                    : null,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Soy Adulto Mayor',
+                                style: AppTypography.cuerpo().copyWith(
+                                  fontSize: 19,
+                                  fontWeight: FontWeight.bold,
+                                  color: _rolSeleccionado == 'adulto_mayor'
+                                      ? AppColors.primaryDark
+                                      : AppColors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Gestiono mis medicinas, citas y juegos con mi código personal.',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: _rolSeleccionado == 'adulto_mayor'
+                                      ? AppColors.primaryDark
+                                      : AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(
+                          _rolSeleccionado == 'adulto_mayor'
+                              ? Icons.radio_button_checked_rounded
+                              : Icons.radio_button_off_rounded,
+                          color: _rolSeleccionado == 'adulto_mayor'
+                              ? AppColors.primaryTeal
+                              : AppColors.textSecondary,
+                          size: 28,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Tarjeta: Familiar / Cuidador
+                InkWell(
+                  onTap: () => setState(() => _rolSeleccionado = 'cuidador'),
+                  borderRadius: BorderRadius.circular(18),
+                  child: Container(
+                    constraints: const BoxConstraints(minHeight: 74),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: _rolSeleccionado == 'cuidador'
+                          ? AppColors.primaryLight.withValues(alpha: 0.5)
+                          : AppColors.cardBackground,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: _rolSeleccionado == 'cuidador'
+                            ? AppColors.primaryTeal
+                            : AppColors.border,
+                        width: _rolSeleccionado == 'cuidador' ? 2.5 : 1.5,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: _rolSeleccionado == 'cuidador'
+                                ? AppColors.primaryTeal
+                                : AppColors.backgroundSecondary,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Center(
+                            child: Text(
+                              '🤝',
+                              style: TextStyle(fontSize: 24),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Soy Familiar o Cuidador',
+                                style: AppTypography.cuerpo().copyWith(
+                                  fontSize: 19,
+                                  fontWeight: FontWeight.bold,
+                                  color: _rolSeleccionado == 'cuidador'
+                                      ? AppColors.primaryDark
+                                      : AppColors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Superviso tomas, alertas de botiquín y bienestar en tiempo real.',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: _rolSeleccionado == 'cuidador'
+                                      ? AppColors.primaryDark
+                                      : AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(
+                          _rolSeleccionado == 'cuidador'
+                              ? Icons.radio_button_checked_rounded
+                              : Icons.radio_button_off_rounded,
+                          color: _rolSeleccionado == 'cuidador'
+                              ? AppColors.primaryTeal
+                              : AppColors.textSecondary,
+                          size: 28,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 22),
 
                 // Nombre completo
                 TextFormField(

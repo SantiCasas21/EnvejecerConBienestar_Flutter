@@ -8,11 +8,54 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../contactos/presentation/providers/contactos_provider.dart';
 import '../../../medicamentos/presentation/providers/medicamentos_provider.dart';
 import '../../../perfil/presentation/providers/perfil_provider.dart';
+import '../../../perfil/data/models/perfil_model.dart';
+import '../../../auth/presentation/widgets/bienvenida_dialog.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/metas_provider.dart';
 import '../widgets/add_meta_dialog.dart';
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  bool _onboardingRevisado = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _verificarOnboardingPrimerInicio();
+    });
+  }
+
+  void _verificarOnboardingPrimerInicio() async {
+    if (_onboardingRevisado || !mounted) return;
+    _onboardingRevisado = true;
+
+    final user = ref.read(authNotifierProvider).user;
+    if (user == null || user.esCuidador) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final key = 'onboarding_adulto_mayor_${user.id}';
+    final yaVisto = prefs.getBool(key) ?? false;
+
+    if (!yaVisto && mounted) {
+      await prefs.setBool(key, true);
+      final nuevoPerfil = await showDialog<PerfilModel>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => BienvenidaDialog(initialNombre: user.nombre),
+      );
+
+      if (nuevoPerfil != null && mounted) {
+        ref.read(perfilNotifierProvider.notifier).actualizarPerfil(nuevoPerfil);
+      }
+    }
+  }
 
   String _obtenerSaludo() {
     final hora = DateTime.now().hour;
@@ -65,7 +108,7 @@ class HomeScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);
     final perfilAsync = ref.watch(perfilNotifierProvider);
     final medicamentosAsync = ref.watch(medicamentosNotifierProvider);
@@ -295,6 +338,68 @@ class HomeScreen extends ConsumerWidget {
                       ],
                     );
                   },
+                ),
+                const SizedBox(height: 28),
+
+                // ── Tarjeta Destacada: Gimnasio Mental y Salón de la Fama ──
+                InkWell(
+                  onTap: () => context.go('/juegos'),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.purple.withValues(alpha: 0.3),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Text('🧠', style: TextStyle(fontSize: 32)),
+                        ),
+                        const SizedBox(width: 14),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Gimnasio Mental y Juegos',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(height: 3),
+                              Text(
+                                'Sudoku, Buscar Pares, Sopa y Salón de la Fama 🏆',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 20),
+                      ],
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 28),
 

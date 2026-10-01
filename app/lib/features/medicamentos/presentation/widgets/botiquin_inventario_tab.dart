@@ -9,51 +9,94 @@ import '../providers/medicamentos_provider.dart';
 
 class BotiquinInventarioTab extends ConsumerStatefulWidget {
   final List<Medicamento> medicamentos;
+  final int? pacienteId;
+  final Future<void> Function(dynamic medId, int cantidad, String medNombre)?
+      onReabastecer;
 
-  const BotiquinInventarioTab({super.key, required this.medicamentos});
+  const BotiquinInventarioTab({
+    super.key,
+    required this.medicamentos,
+    this.pacienteId,
+    this.onReabastecer,
+  });
 
   @override
-  ConsumerState<BotiquinInventarioTab> createState() => _BotiquinInventarioTabState();
+  ConsumerState<BotiquinInventarioTab> createState() =>
+      _BotiquinInventarioTabState();
 }
 
 class _BotiquinInventarioTabState extends ConsumerState<BotiquinInventarioTab> {
   String _filtro = 'todos'; // 'todos', 'alerta', 'agotados'
 
   void _reabastecer(dynamic medId, int cantidad, String medNombre) async {
-    await ref.read(medicamentosNotifierProvider.notifier).reabastecerStock(medId, cantidad);
+    if (widget.onReabastecer != null) {
+      await widget.onReabastecer!(medId, cantidad, medNombre);
+    } else {
+      await ref
+          .read(medicamentosNotifierProvider.notifier)
+          .reabastecerStock(medId, cantidad);
+    }
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('📦 +$cantidad pastillas agregadas a $medNombre', style: const TextStyle(fontWeight: FontWeight.bold)),
+          content: Text(
+            '📦 ¡Se agregaron +$cantidad pastillas a $medNombre!',
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
           backgroundColor: AppColors.healthGreen,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
       );
     }
   }
 
   void _ajustarManual(Medicamento med) async {
-    final controller = TextEditingController(text: '${med.cantidadRestante ?? 30}');
+    final controller =
+        TextEditingController(text: '${med.cantidadRestante ?? 30}');
     final result = await showDialog<int>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Ajustar inventario de ${med.nombre}'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Row(
+          children: [
+            const Icon(Icons.edit_note_rounded,
+                color: AppColors.primaryTeal, size: 28),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Ajustar inventario de ${med.nombre}',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+              ),
+            ),
+          ],
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Ingresa la cantidad exacta de pastillas en la caja actualmente:'),
-            const SizedBox(height: 12),
+            const Text(
+              'Ingresa el número total de pastillas disponibles actualmente en la caja o blíster:',
+              style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 16),
             TextField(
               controller: controller,
               keyboardType: TextInputType.number,
               autofocus: true,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              decoration: const InputDecoration(
-                labelText: 'Pastillas en caja',
-                prefixIcon: Icon(Icons.inventory_2_outlined),
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primaryDark,
+              ),
+              decoration: InputDecoration(
+                labelText: 'Pastillas en existencia',
+                prefixIcon: const Icon(Icons.inventory_2_outlined,
+                    color: AppColors.primaryTeal),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16)),
               ),
             ),
           ],
@@ -61,25 +104,53 @@ class _BotiquinInventarioTabState extends ConsumerState<BotiquinInventarioTab> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
+            child: const Text('Cancelar',
+                style: TextStyle(fontSize: 16, color: AppColors.textSecondary)),
           ),
           ElevatedButton(
             onPressed: () {
               final n = int.tryParse(controller.text.trim());
               Navigator.pop(ctx, n);
             },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryTeal, foregroundColor: Colors.white),
-            child: const Text('Guardar'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryTeal,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14)),
+            ),
+            child: const Text('Guardar',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
     );
 
-    if (result != null) {
+    if (result != null && mounted) {
       final actual = med.cantidadRestante ?? 0;
       final diff = result - actual;
       if (diff != 0) {
-        await ref.read(medicamentosNotifierProvider.notifier).reabastecerStock(med.id, diff);
+        if (widget.onReabastecer != null) {
+          await widget.onReabastecer!(med.id, diff, med.nombre);
+        } else {
+          await ref
+              .read(medicamentosNotifierProvider.notifier)
+              .reabastecerStock(med.id, diff);
+        }
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                '📦 Inventario de ${med.nombre} actualizado a $result pastillas',
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              backgroundColor: AppColors.healthGreen,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14)),
+            ),
+          );
+        }
       }
     }
   }
@@ -93,10 +164,12 @@ class _BotiquinInventarioTabState extends ConsumerState<BotiquinInventarioTab> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Configura un teléfono de contacto en tu Perfil para pedir a domicilio.'),
+          content: const Text(
+              'Configura un teléfono de contacto en tu Perfil para pedir a domicilio.'),
           backgroundColor: AppColors.primaryTeal,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
     }
@@ -273,77 +346,131 @@ class _BotiquinInventarioTabState extends ConsumerState<BotiquinInventarioTab> {
           ),
         ] else ...[
           ...filtrados.map((med) {
-            final stockColor = med.colorStock;
             final cant = med.cantidadRestante ?? 0;
             final dias = med.diasAutonomia;
+            final esAgotado = cant <= 0;
+            final esBajo = !esAgotado && (cant <= (med.umbralAlerta ?? 5) || dias <= 7);
+
+            final Color stockColor;
+            final String badgeTexto;
+            if (esAgotado) {
+              stockColor = const Color(0xFFE11D48); // Rojo
+              badgeTexto = '🔴 Agotado';
+            } else if (esBajo) {
+              stockColor = const Color(0xFFF59E0B); // Ámbar
+              badgeTexto = '⚠️ Stock Bajo (≤ 5)';
+            } else {
+              stockColor = const Color(0xFF16A34A); // Verde
+              badgeTexto = '🟢 Stock Óptimo';
+            }
 
             return Card(
-              margin: const EdgeInsets.only(bottom: 14),
+              margin: const EdgeInsets.only(bottom: 16),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-                side: BorderSide(color: stockColor.withValues(alpha: 0.35), width: 1.5),
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(color: stockColor.withValues(alpha: 0.4), width: 1.5),
               ),
               color: AppColors.cardBackground,
+              elevation: 2,
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(18.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Fila cabecera del medicamento
+                    // Fila cabecera del medicamento estilo Blíster/Caja
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: stockColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: stockColor.withValues(alpha: 0.3)),
+                          ),
+                          child: Center(
+                            child: Text(
+                              med.icono.isNotEmpty ? med.icono : '💊',
+                              style: const TextStyle(fontSize: 24),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
                         Expanded(
-                          child: Row(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(med.icono, style: const TextStyle(fontSize: 22)),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  '${med.nombre} ${med.miligramos != null ? "${med.miligramos}mg" : ""}',
-                                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                              Text(
+                                '${med.nombre} ${med.miligramos != null && med.miligramos!.isNotEmpty ? "${med.miligramos}mg" : ""}',
+                                style: const TextStyle(
+                                  fontSize: 19,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '⏰ Frecuencia: Cada ${med.frecuencia ?? 8} horas',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.textSecondary,
                                 ),
                               ),
                             ],
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
                             color: stockColor.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: stockColor.withValues(alpha: 0.4)),
                           ),
                           child: Text(
-                            med.nivelStock.toUpperCase(),
-                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: stockColor),
+                            badgeTexto,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: stockColor,
+                            ),
                           ),
                         ),
                       ],
                     ),
 
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 14),
 
                     // Barra y texto de stock
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          '$cant pastillas restantes',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: stockColor),
+                          '$cant pastillas disponibles',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: stockColor,
+                          ),
                         ),
                         Text(
-                          '~ $dias días de autonomía',
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                          esAgotado
+                              ? 'Sin autonomía'
+                              : 'Te quedan ~$dias días',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: esAgotado ? stockColor : AppColors.textPrimary,
+                          ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 6),
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(8),
                       child: LinearProgressIndicator(
                         value: (cant / 30).clamp(0.0, 1.0),
-                        minHeight: 8,
+                        minHeight: 10,
                         backgroundColor: Colors.grey.shade200,
                         valueColor: AlwaysStoppedAnimation<Color>(stockColor),
                       ),
@@ -351,23 +478,30 @@ class _BotiquinInventarioTabState extends ConsumerState<BotiquinInventarioTab> {
 
                     const SizedBox(height: 14),
 
-                    // Botones de Reabastecimiento Senior en 1-Tap
+                    // Botones de Reabastecimiento interactivo (Accesibles para Paciente y Cuidador)
                     const Text(
-                      'Reabastecer stock rápido:',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+                      'Reabastecer botiquín:',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 8),
                     Row(
                       children: [
                         Expanded(
                           child: OutlinedButton(
                             onPressed: () => _reabastecer(med.id, 10, med.nombre),
                             style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              minimumSize: const Size(0, 46),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               side: const BorderSide(color: AppColors.primaryTeal),
                             ),
-                            child: const Text('+10 pastillas', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryTeal)),
+                            child: const Text(
+                              '+10 pastillas',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: AppColors.primaryTeal),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -375,18 +509,25 @@ class _BotiquinInventarioTabState extends ConsumerState<BotiquinInventarioTab> {
                           child: ElevatedButton(
                             onPressed: () => _reabastecer(med.id, 30, med.nombre),
                             style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              minimumSize: const Size(0, 46),
                               backgroundColor: AppColors.primaryTeal,
                               foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
-                            child: const Text('+30 (1 Caja)', style: TextStyle(fontWeight: FontWeight.bold)),
+                            child: const Text(
+                              '+30 (1 Caja)',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
-                        IconButton(
-                          icon: const Icon(Icons.tune_rounded, color: AppColors.textSecondary),
+                        IconButton.filledTonal(
+                          icon: const Icon(Icons.tune_rounded, size: 20, color: AppColors.primaryDark),
                           tooltip: 'Ajustar número exacto',
+                          style: IconButton.styleFrom(
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            minimumSize: const Size(46, 46),
+                          ),
                           onPressed: () => _ajustarManual(med),
                         ),
                       ],

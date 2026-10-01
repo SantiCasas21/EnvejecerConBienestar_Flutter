@@ -16,6 +16,7 @@ class TratamientoSchema(ma.SQLAlchemyAutoSchema):
     dias_transcurridos = fields.Integer(dump_only=True)
     dias_totales = fields.Integer(dump_only=True)
     progreso_dias = fields.Float(dump_only=True)
+    adherencia_porcentaje = fields.Float(dump_only=True)
     total_medicamentos = fields.Method('get_total_medicamentos', dump_only=True)
 
     def get_total_medicamentos(self, obj) -> int:
@@ -27,12 +28,18 @@ class TratamientoCreateSchema(ma.Schema):
         unknown = EXCLUDE
 
     diagnostico = fields.String(required=True, validate=validate.Length(min=2, max=120))
+    especialidad_medica = fields.String(validate=validate.Length(max=100), missing='Medicina General', allow_none=True)
     medico_tratante = fields.String(validate=validate.Length(max=120), missing=None, allow_none=True)
     institucion_salud = fields.String(validate=validate.Length(max=120), missing=None, allow_none=True)
     fecha_inicio = fields.Date(missing=None, allow_none=True)
     fecha_fin = fields.Date(missing=None, allow_none=True)
     es_cronico = fields.Boolean(missing=False, allow_none=True)
     estado = fields.String(validate=validate.OneOf(['activo', 'completado', 'suspendido']), missing='activo')
+    objetivo_terapeutico = fields.String(validate=validate.Length(max=200), missing=None, allow_none=True)
+    notas_evolucion = fields.String(missing=None, allow_none=True)
+    recomendaciones = fields.String(missing=None, allow_none=True)
+    fecha_ultima_revision = fields.Date(missing=None, allow_none=True)
+    proxima_cita = fields.Date(missing=None, allow_none=True)
     instrucciones = fields.String(missing=None, allow_none=True)
     color = fields.String(missing='#0D9488', allow_none=True)
     medicamento_ids = fields.List(fields.Integer(), missing=None, allow_none=True)

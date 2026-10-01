@@ -10,6 +10,7 @@ import '../providers/perfil_provider.dart';
 import '../../data/models/perfil_model.dart';
 import '../widgets/habeas_data_dialog.dart';
 import '../widgets/imc_info_dialog.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 
 class EditarPerfilScreen extends ConsumerStatefulWidget {
   const EditarPerfilScreen({super.key});
@@ -43,12 +44,28 @@ class _EditarPerfilScreenState extends ConsumerState<EditarPerfilScreen> {
 
   String _tipoSangre = 'O+';
   String _genero = 'Femenino';
+  String _tipoDocumento = 'CC';
+  final _numeroDocumentoController = TextEditingController();
+  String _regimenEps = 'Contributivo';
+  final _presionHabitualController = TextEditingController();
+  String _nivelMovilidad = 'Independiente';
+  final _restriccionesAlimentariasController = TextEditingController();
+  final _antecedentesFamiliaresController = TextEditingController();
+
   bool _datosCargados = false;
   bool _guardando = false;
   bool _aceptoHabeasData = false;
 
   final List<String> _tiposSangre = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
   final List<String> _generos = ['Femenino', 'Masculino', 'No especificado', 'Otro'];
+  final List<String> _tiposDocumento = ['CC', 'CE', 'TI', 'PAS', 'PEP'];
+  final List<String> _regimenesEps = ['Contributivo', 'Subsidiado', 'Especial / Magisterio', 'Particular', 'Otro'];
+  final List<String> _nivelesMovilidad = [
+    'Independiente',
+    'Bastón o Andador',
+    'Silla de Ruedas',
+    'Asistencia Total / Encamado',
+  ];
   
   // Lista ampliada y completa de parentescos y redes de apoyo
   final List<String> _parentescos = [
@@ -97,6 +114,10 @@ class _EditarPerfilScreenState extends ConsumerState<EditarPerfilScreen> {
     _telefonoMedicoController.dispose();
     _clinicaPreferidaController.dispose();
     _notasAdicionalesController.dispose();
+    _numeroDocumentoController.dispose();
+    _presionHabitualController.dispose();
+    _restriccionesAlimentariasController.dispose();
+    _antecedentesFamiliaresController.dispose();
     super.dispose();
   }
 
@@ -143,6 +164,20 @@ class _EditarPerfilScreenState extends ConsumerState<EditarPerfilScreen> {
       _genero = gen;
     }
 
+    if (perfil.tipoDocumento != null && _tiposDocumento.contains(perfil.tipoDocumento)) {
+      _tipoDocumento = perfil.tipoDocumento!;
+    }
+    _numeroDocumentoController.text = perfil.numeroDocumento ?? '';
+    if (perfil.regimenEps != null && _regimenesEps.contains(perfil.regimenEps)) {
+      _regimenEps = perfil.regimenEps!;
+    }
+    _presionHabitualController.text = perfil.presionHabitual ?? '';
+    if (perfil.nivelMovilidad != null && _nivelesMovilidad.contains(perfil.nivelMovilidad)) {
+      _nivelMovilidad = perfil.nivelMovilidad!;
+    }
+    _restriccionesAlimentariasController.text = perfil.restriccionesAlimentarias ?? '';
+    _antecedentesFamiliaresController.text = perfil.antecedentesFamiliares ?? '';
+
     _aceptoHabeasData = perfil.aceptoHabeasData ?? false;
     _datosCargados = true;
   }
@@ -181,14 +216,29 @@ class _EditarPerfilScreenState extends ConsumerState<EditarPerfilScreen> {
     }
   }
 
+  String _formatearFechaNacimientoTexto(DateTime? fecha) {
+    if (fecha == null) return 'Toca aquí para seleccionar fecha';
+    const meses = [
+      'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+    ];
+    final mesNombre = meses[fecha.month - 1];
+    final now = DateTime.now();
+    final edad = now.year - fecha.year -
+        ((now.month < fecha.month || (now.month == fecha.month && now.day < fecha.day)) ? 1 : 0);
+    final mesCapitalizado = '${mesNombre[0].toUpperCase()}${mesNombre.substring(1)}';
+    return '${fecha.day} de $mesCapitalizado de ${fecha.year} ($edad años)';
+  }
+
   void _seleccionarFechaNacimiento() async {
     final now = DateTime.now();
     final fechaSeleccionada = await showDatePicker(
       context: context,
       initialDate: _fechaNacimiento ?? DateTime(now.year - 70, now.month, now.day),
-      firstDate: DateTime(1900),
+      firstDate: DateTime(1910),
       lastDate: now,
-      helpText: 'Selecciona tu Fecha de Nacimiento',
+      initialDatePickerMode: DatePickerMode.year,
+      helpText: 'Selecciona tu Año y Fecha de Nacimiento',
       confirmText: 'Aceptar',
       cancelText: 'Cancelar',
       builder: (context, child) {
@@ -293,6 +343,13 @@ class _EditarPerfilScreenState extends ConsumerState<EditarPerfilScreen> {
         'telefono_medico': _telefonoMedicoController.text.trim(),
         'clinica_preferida': _clinicaPreferidaController.text.trim().isEmpty ? 'Hospital General' : _clinicaPreferidaController.text.trim(),
         'notas_adicionales': _notasAdicionalesController.text.trim(),
+        'tipo_documento': _tipoDocumento,
+        'numero_documento': _numeroDocumentoController.text.trim(),
+        'regimen_eps': _regimenEps,
+        'presion_habitual': _presionHabitualController.text.trim(),
+        'nivel_movilidad': _nivelMovilidad,
+        'restricciones_alimentarias': _restriccionesAlimentariasController.text.trim(),
+        'antecedentes_familiares': _antecedentesFamiliaresController.text.trim(),
         'acepto_habeas_data': _aceptoHabeasData,
       };
 
@@ -365,6 +422,8 @@ class _EditarPerfilScreenState extends ConsumerState<EditarPerfilScreen> {
     }
 
     final imcEnVivo = _calcularImcEnVivo();
+    final authUser = ref.watch(authNotifierProvider).user;
+    final userEmail = authUser?.email ?? '';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -414,6 +473,99 @@ class _EditarPerfilScreenState extends ConsumerState<EditarPerfilScreen> {
                         ),
                         const Divider(height: 20, thickness: 1.5, color: AppColors.border),
 
+                        // Correo Electrónico (No editable - Identificador de cuenta)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          decoration: BoxDecoration(
+                            color: AppColors.backgroundSecondary.withValues(alpha: 0.7),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: AppColors.border, width: 1.5),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.email_outlined, color: AppColors.primaryTeal, size: 24),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Correo de la cuenta',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      userEmail.isNotEmpty ? userEmail : 'No registrado',
+                                      style: AppTypography.cuerpo().copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: AppColors.border,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.lock_outline, size: 14, color: AppColors.textSecondary),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'No editable',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Tipo y Número de Documento de Identidad
+                        Row(
+                          children: [
+                            Expanded(
+                              flex: 4,
+                              child: DropdownButtonFormField<String>(
+                                initialValue: _tipoDocumento,
+                                isExpanded: true,
+                                items: _tiposDocumento.map((td) => DropdownMenuItem(value: td, child: Text(td, style: AppTypography.cuerpo()))).toList(),
+                                onChanged: (val) => setState(() => _tipoDocumento = val ?? 'CC'),
+                                decoration: const InputDecoration(labelText: 'Tipo Doc'),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              flex: 7,
+                              child: TextFormField(
+                                controller: _numeroDocumentoController,
+                                keyboardType: TextInputType.text,
+                                style: AppTypography.cuerpo(),
+                                decoration: const InputDecoration(
+                                  labelText: 'Número de Documento',
+                                  hintText: 'Ej: 19458291',
+                                  prefixIcon: Icon(Icons.badge_outlined, color: AppColors.primaryTeal),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+
                         // Fecha de Nacimiento con DatePicker
                         InkWell(
                           onTap: _seleccionarFechaNacimiento,
@@ -439,11 +591,9 @@ class _EditarPerfilScreenState extends ConsumerState<EditarPerfilScreen> {
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
-                                        _fechaNacimiento != null 
-                                            ? '${_fechaNacimiento!.day}/${_fechaNacimiento!.month}/${_fechaNacimiento!.year}'
-                                            : 'Toca aquí para seleccionar fecha',
+                                        _formatearFechaNacimientoTexto(_fechaNacimiento),
                                         style: TextStyle(
-                                          fontSize: 17,
+                                          fontSize: 16,
                                           fontWeight: FontWeight.w600,
                                           color: _fechaNacimiento != null ? AppColors.textPrimary : AppColors.textSecondary,
                                         ),
@@ -660,6 +810,41 @@ class _EditarPerfilScreenState extends ConsumerState<EditarPerfilScreen> {
                             ),
                           ),
                         ],
+
+                        const SizedBox(height: 14),
+                        Row(
+                          children: [
+                            Expanded(
+                              flex: 5,
+                              child: TextFormField(
+                                controller: _presionHabitualController,
+                                style: AppTypography.cuerpo(),
+                                decoration: const InputDecoration(
+                                  labelText: 'Presión Habitual',
+                                  hintText: 'Ej: 120/80 mmHg',
+                                  prefixIcon: Icon(Icons.monitor_heart_outlined, color: AppColors.emergencyRed),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              flex: 6,
+                              child: DropdownButtonFormField<String>(
+                                initialValue: _nivelMovilidad,
+                                isExpanded: true,
+                                items: _nivelesMovilidad.map((m) => DropdownMenuItem(
+                                  value: m,
+                                  child: Text(m, style: const TextStyle(fontSize: 14)),
+                                )).toList(),
+                                onChanged: (val) => setState(() => _nivelMovilidad = val ?? 'Independiente'),
+                                decoration: const InputDecoration(
+                                  labelText: 'Movilidad',
+                                  prefixIcon: Icon(Icons.directions_walk_rounded, color: AppColors.primaryTeal),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -769,14 +954,35 @@ class _EditarPerfilScreenState extends ConsumerState<EditarPerfilScreen> {
                         ),
                         const Divider(height: 20, thickness: 1.5, color: AppColors.border),
 
-                        TextFormField(
-                          controller: _epsController,
-                          style: AppTypography.cuerpo(),
-                          decoration: const InputDecoration(
-                            labelText: 'EPS / Aseguradora de Salud',
-                            hintText: 'Ej: SURA, Sanitas, Compensar',
-                            prefixIcon: Icon(Icons.health_and_safety_outlined, color: AppColors.primaryTeal),
-                          ),
+                        Row(
+                          children: [
+                            Expanded(
+                              flex: 6,
+                              child: TextFormField(
+                                controller: _epsController,
+                                style: AppTypography.cuerpo(),
+                                decoration: const InputDecoration(
+                                  labelText: 'EPS / Aseguradora',
+                                  hintText: 'Ej: SURA, Sanitas, Compensar',
+                                  prefixIcon: Icon(Icons.health_and_safety_outlined, color: AppColors.primaryTeal),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              flex: 5,
+                              child: DropdownButtonFormField<String>(
+                                initialValue: _regimenEps,
+                                isExpanded: true,
+                                items: _regimenesEps.map((r) => DropdownMenuItem(
+                                  value: r,
+                                  child: Text(r, style: const TextStyle(fontSize: 13)),
+                                )).toList(),
+                                onChanged: (val) => setState(() => _regimenEps = val ?? 'Contributivo'),
+                                decoration: const InputDecoration(labelText: 'Régimen EPS'),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 12),
 
@@ -925,6 +1131,38 @@ class _EditarPerfilScreenState extends ConsumerState<EditarPerfilScreen> {
                                     final nuevo = trat.esCompletado ? 'activo' : 'completado';
                                     await ref.read(tratamientosNotifierProvider.notifier).cambiarEstado(trat.id, nuevo);
                                   },
+                                  onEdit: () async {
+                                    final result = await showDialog<Map<String, dynamic>>(
+                                      context: context,
+                                      builder: (context) => AddTratamientoDialog(tratamiento: trat),
+                                    );
+                                    if (result != null) {
+                                      try {
+                                        await ref.read(tratamientosNotifierProvider.notifier).updateTratamiento(trat.id, result);
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text('✅ Tratamiento para ${result['diagnostico']} actualizado', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                              backgroundColor: AppColors.healthGreen,
+                                              behavior: SnackBarBehavior.floating,
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                            ),
+                                          );
+                                        }
+                                      } catch (e) {
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text('❌ Error al actualizar tratamiento: $e', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                              backgroundColor: AppColors.emergencyRed,
+                                              behavior: SnackBarBehavior.floating,
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                            ),
+                                          );
+                                        }
+                                      }
+                                    }
+                                  },
                                   onDelete: () async {
                                     final confirm = await showDialog<bool>(
                                       context: context,
@@ -1030,12 +1268,36 @@ class _EditarPerfilScreenState extends ConsumerState<EditarPerfilScreen> {
                         const SizedBox(height: 12),
 
                         TextFormField(
+                          controller: _antecedentesFamiliaresController,
+                          maxLines: 2,
+                          style: AppTypography.cuerpo(),
+                          decoration: const InputDecoration(
+                            labelText: 'Antecedentes Familiares Importantes',
+                            hintText: 'Ej: Madre hipertensa, padre con diabetes tipo 2',
+                            prefixIcon: Icon(Icons.family_restroom_outlined, color: AppColors.primaryTeal),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        TextFormField(
+                          controller: _restriccionesAlimentariasController,
+                          maxLines: 2,
+                          style: AppTypography.cuerpo(),
+                          decoration: const InputDecoration(
+                            labelText: 'Restricciones Alimentarias / Dieta Especial',
+                            hintText: 'Ej: Dieta baja en sodio, hipoglúcida, sin gluten',
+                            prefixIcon: Icon(Icons.restaurant_outlined, color: AppColors.primaryTeal),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        TextFormField(
                           controller: _notasAdicionalesController,
                           maxLines: 2,
                           style: AppTypography.cuerpo(),
                           decoration: const InputDecoration(
-                            labelText: 'Notas Adicionales de Cuidado / Dieta',
-                            hintText: 'Ej: Dieta baja en sodio, no ingerir lácteos de noche',
+                            labelText: 'Notas Adicionales de Cuidado / Observaciones',
+                            hintText: 'Ej: Cuidados especiales, preferencias en la atención',
                             prefixIcon: Icon(Icons.note_alt_outlined, color: AppColors.primaryTeal),
                           ),
                         ),

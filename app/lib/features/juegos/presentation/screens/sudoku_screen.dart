@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../config/theme/app_colors.dart';
 import '../providers/juegos_provider.dart';
+import '../widgets/boton_volver_juegos.dart';
 import '../widgets/victoria_puntaje_dialog.dart';
 
 enum SudokuDificultad { facil4x4, medio6x6, clasico9x9 }
@@ -30,9 +31,21 @@ class _SudokuScreenState extends ConsumerState<SudokuScreen> {
   int _pistasUsadas = 0;
   bool _juegoTerminado = false;
 
+  int get _maxPistas {
+    switch (_dificultad) {
+      case SudokuDificultad.facil4x4:
+        return 1;
+      case SudokuDificultad.medio6x6:
+        return 2;
+      case SudokuDificultad.clasico9x9:
+        return 3;
+    }
+  }
+
+  int get _pistasRestantes => (_maxPistas - _pistasUsadas).clamp(0, _maxPistas);
+
   // ── PUZZLES PREDISEÑADOS ACCESIBLES ──
 
-  // Puzzles 4x4 (Números 1-4, bloques 2x2)
   static final List<Map<String, dynamic>> _puzzles4x4 = [
     {
       'sol': [
@@ -78,7 +91,6 @@ class _SudokuScreenState extends ConsumerState<SudokuScreen> {
     },
   ];
 
-  // Puzzles 6x6 (Números 1-6, bloques 2x3)
   static final List<Map<String, dynamic>> _puzzles6x6 = [
     {
       'sol': [
@@ -98,9 +110,26 @@ class _SudokuScreenState extends ConsumerState<SudokuScreen> {
         [0, 1, 0, 3, 0, 5],
       ],
     },
+    {
+      'sol': [
+        [2, 3, 1, 5, 6, 4],
+        [5, 6, 4, 2, 3, 1],
+        [1, 2, 3, 4, 5, 6],
+        [4, 5, 6, 1, 2, 3],
+        [3, 1, 2, 6, 4, 5],
+        [6, 4, 5, 3, 1, 2],
+      ],
+      'ini': [
+        [2, 0, 1, 5, 0, 4],
+        [0, 6, 0, 0, 3, 0],
+        [1, 0, 3, 4, 0, 6],
+        [4, 0, 6, 1, 0, 3],
+        [0, 1, 0, 0, 4, 0],
+        [6, 0, 5, 3, 0, 2],
+      ],
+    },
   ];
 
-  // Puzzles 9x9 (Números 1-9, bloques 3x3)
   static final List<Map<String, dynamic>> _puzzles9x9 = [
     {
       'sol': [
@@ -146,12 +175,14 @@ class _SudokuScreenState extends ConsumerState<SudokuScreen> {
       _tamano = 6;
       _bloqueFilas = 2;
       _bloqueCols = 3;
-      puzzle = _puzzles6x6[0];
+      final idx = DateTime.now().millisecondsSinceEpoch % _puzzles6x6.length;
+      puzzle = _puzzles6x6[idx];
     } else {
       _tamano = 9;
       _bloqueFilas = 3;
       _bloqueCols = 3;
-      puzzle = _puzzles9x9[0];
+      final idx = DateTime.now().millisecondsSinceEpoch % _puzzles9x9.length;
+      puzzle = _puzzles9x9[idx];
     }
 
     final solRaw = puzzle['sol'] as List<List<int>>;
@@ -180,7 +211,6 @@ class _SudokuScreenState extends ConsumerState<SudokuScreen> {
     final r = _filaSeleccionada!;
     final c = _colSeleccionada!;
 
-    // No modificar celdas fijas iniciales
     if (_tableroInicial[r][c] != 0) return;
 
     setState(() {
@@ -202,45 +232,137 @@ class _SudokuScreenState extends ConsumerState<SudokuScreen> {
     });
   }
 
-  void _darPista() {
-    if (_filaSeleccionada == null || _colSeleccionada == null || _juegoTerminado) {
+  void _solicitarPistaInformativa() {
+    if (_juegoTerminado) return;
+
+    if (_pistasRestantes <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('💡 Toca primero una casilla vacía para recibir una pista.'),
+          content: Text('⚠️ Has utilizado todas las pistas permitidas para este nivel ($_maxPistas/$_maxPistas). ¡Confía en tu lógica!'),
           behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.primaryOrange,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          backgroundColor: AppColors.primaryTeal,
         ),
       );
       return;
     }
 
-    final r = _filaSeleccionada!;
-    final c = _colSeleccionada!;
+    // Identificar la celda a orientar: si el usuario tiene una celda vacía seleccionada, la usamos; si no, buscamos la primera vacía
+    int targetR = -1;
+    int targetC = -1;
 
-    if (_tableroInicial[r][c] != 0) {
+    if (_filaSeleccionada != null && _colSeleccionada != null && _tableroUsuario[_filaSeleccionada!][_colSeleccionada!] == 0) {
+      targetR = _filaSeleccionada!;
+      targetC = _colSeleccionada!;
+    } else {
+      for (int r = 0; r < _tamano; r++) {
+        for (int c = 0; c < _tamano; c++) {
+          if (_tableroUsuario[r][c] == 0) {
+            targetR = r;
+            targetC = c;
+            break;
+          }
+        }
+        if (targetR != -1) break;
+      }
+    }
+
+    if (targetR == -1) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Esa casilla ya venía dada en el juego.')),
+        SnackBar(
+          content: const Text('¡No hay casillas vacías pendientes!'),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
       );
       return;
     }
 
-    setState(() {
-      _tableroUsuario[r][c] = _solucion[r][c];
-      _pistasUsadas++;
-    });
+    final valorCorrecto = _solucion[targetR][targetC];
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('💡 ¡Pista colocada: ${_solucion[r][c]}! Sigue adelante.'),
-        backgroundColor: AppColors.healthGreen,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        duration: const Duration(seconds: 2),
+    // Construir explicación pedagógica basada en los números presentes en fila, columna o bloque
+    final startRow = (targetR ~/ _bloqueFilas) * _bloqueFilas;
+    final startCol = (targetC ~/ _bloqueCols) * _bloqueCols;
+    final Set<int> enBloque = {};
+    for (int rf = startRow; rf < startRow + _bloqueFilas; rf++) {
+      for (int cf = startCol; cf < startCol + _bloqueCols; cf++) {
+        final val = _tableroUsuario[rf][cf];
+        if (val != 0 && val != valorCorrecto) enBloque.add(val);
+      }
+    }
+
+    String explicacion = '';
+    if (enBloque.isNotEmpty) {
+      explicacion = 'En este bloque ya están presentes los números ${enBloque.toList()..sort()}. Por la regla de descarte y no repetición, esta casilla corresponde al número $valorCorrecto.';
+    } else {
+      explicacion = 'Analizando la fila ${targetR + 1} y la columna ${targetC + 1}, el único número que no se repite y respeta el patrón es el $valorCorrecto.';
+    }
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Text('💡', style: TextStyle(fontSize: 26)),
+            SizedBox(width: 8),
+            Text('Pista Deductiva', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primaryTeal)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.primaryLight.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.primaryTeal.withValues(alpha: 0.3)),
+              ),
+              child: Text(
+                'Casilla: Fila ${targetR + 1}, Columna ${targetC + 1}',
+                style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryTeal, fontSize: 14),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              explicacion,
+              style: const TextStyle(fontSize: 15, height: 1.35, color: AppColors.textPrimary),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Pistas restantes después de aplicar: ${_pistasRestantes - 1} de $_maxPistas',
+              style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Cancelar', style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryTeal,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () {
+              Navigator.pop(dialogCtx);
+              setState(() {
+                _tableroUsuario[targetR][targetC] = valorCorrecto;
+                _filaSeleccionada = targetR;
+                _colSeleccionada = targetC;
+                _pistasUsadas++;
+              });
+              _verificarVictoria();
+            },
+            child: Text('Colocar el $valorCorrecto', style: const TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
       ),
     );
-
-    _verificarVictoria();
   }
 
   bool _tieneConflicto(int r, int c) {
@@ -273,7 +395,6 @@ class _SudokuScreenState extends ConsumerState<SudokuScreen> {
   }
 
   void _verificarVictoria() async {
-    // Verificar si todas las celdas están llenas y coinciden con la solución
     bool lleno = true;
     bool correcto = true;
 
@@ -293,26 +414,40 @@ class _SudokuScreenState extends ConsumerState<SudokuScreen> {
     if (lleno && correcto && !_juegoTerminado) {
       _juegoTerminado = true;
 
-      int puntosBase = _dificultad == SudokuDificultad.facil4x4
-          ? 200
+      int puntosBase;
+      int descuentoPorPista;
+      if (_dificultad == SudokuDificultad.facil4x4) {
+        puntosBase = 120;
+        descuentoPorPista = 15;
+      } else if (_dificultad == SudokuDificultad.medio6x6) {
+        puntosBase = 280;
+        descuentoPorPista = 20;
+      } else {
+        puntosBase = 500;
+        descuentoPorPista = 25;
+      }
+
+      final penalizacionPistas = _pistasUsadas * descuentoPorPista;
+      final puntajeFinal = (puntosBase - penalizacionPistas).clamp(50, puntosBase);
+
+      final nivelStr = _dificultad == SudokuDificultad.facil4x4
+          ? 'basico'
           : _dificultad == SudokuDificultad.medio6x6
-              ? 400
-              : 600;
+              ? 'intermedio'
+              : 'avanzado';
 
-      final penalizacionPistas = _pistasUsadas * 30;
-      final puntajeFinal = (puntosBase - penalizacionPistas).clamp(100, puntosBase);
-
-      // Guardar puntaje en la nube de forma reactiva
-      await ref.read(guardarPuntajeNotifierProvider).registrarPuntaje(
+      final pos = await ref.read(guardarPuntajeNotifierProvider).registrarPuntaje(
             tipoJuego: 'Sudoku',
             puntaje: puntajeFinal,
+            nivelDificultad: nivelStr,
           );
 
       if (mounted) {
         VictoriaPuntajeDialog.mostrar(
           context: context,
-          nombreJuego: 'Sudoku Senior (${_textoDificultad(_dificultad)})',
+          nombreJuego: 'Sudoku (${_textoDificultad(_dificultad)})',
           puntaje: puntajeFinal,
+          posicionTop: pos,
           mensajePersonalizado:
               '¡Completaste el Sudoku exitosamente! El razonamiento lógico y los patrones numéricos son un escudo protector para tu memoria.',
           onJugarDeNuevo: _iniciarNuevaPartida,
@@ -324,11 +459,11 @@ class _SudokuScreenState extends ConsumerState<SudokuScreen> {
   String _textoDificultad(SudokuDificultad d) {
     switch (d) {
       case SudokuDificultad.facil4x4:
-        return '4x4 Suave';
+        return '4x4 Básico';
       case SudokuDificultad.medio6x6:
         return '6x6 Intermedio';
       case SudokuDificultad.clasico9x9:
-        return '9x9 Clásico';
+        return '9x9 Avanzado';
     }
   }
 
@@ -341,9 +476,11 @@ class _SudokuScreenState extends ConsumerState<SudokuScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        leadingWidth: 190,
+        leading: const BotonVolverJuegos(),
         title: const Text(
-          '🔢 Sudoku Senior',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
+          '🔢 Sudoku',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
         ),
         backgroundColor: AppColors.primaryTeal,
         foregroundColor: Colors.white,
@@ -360,38 +497,49 @@ class _SudokuScreenState extends ConsumerState<SudokuScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
           child: Column(
             children: [
-              // ── Selector de Dificultad Senior ──
+              // ── Selector de Dificultad ──
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _buildDificultadChip('4x4 Estimulación', SudokuDificultad.facil4x4, '🧩'),
+                    _buildDificultadChip('4x4 Básico', SudokuDificultad.facil4x4, '🧩'),
                     const SizedBox(width: 8),
                     _buildDificultadChip('6x6 Intermedio', SudokuDificultad.medio6x6, '⚡'),
                     const SizedBox(width: 8),
-                    _buildDificultadChip('9x9 Clásico', SudokuDificultad.clasico9x9, '🎯'),
+                    _buildDificultadChip('9x9 Avanzado', SudokuDificultad.clasico9x9, '🎯'),
                   ],
                 ),
               ),
               const SizedBox(height: 12),
 
-              // ── Barra de Ayudas y Pistas ──
+              // ── Barra de Pistas con Límite Estricto y Explicación ──
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Pistas usadas: $_pistasUsadas',
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: _pistasRestantes > 0 ? AppColors.primaryLight.withValues(alpha: 0.5) : Colors.grey.shade200,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      'Pistas restantes: $_pistasRestantes / $_maxPistas',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: _pistasRestantes > 0 ? AppColors.primaryTeal : Colors.grey.shade700,
+                      ),
+                    ),
                   ),
                   ElevatedButton.icon(
-                    onPressed: _darPista,
+                    onPressed: _pistasRestantes > 0 ? _solicitarPistaInformativa : null,
                     icon: const Icon(Icons.lightbulb_outline, size: 20, color: Colors.amber),
                     label: const Text('💡 Pedir Pista', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.amber.shade50,
                       foregroundColor: Colors.brown.shade900,
-                      side: BorderSide(color: Colors.amber.shade400),
+                      side: BorderSide(color: _pistasRestantes > 0 ? Colors.amber.shade400 : Colors.grey.shade300),
                       minimumSize: const Size(0, 40),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
@@ -400,7 +548,7 @@ class _SudokuScreenState extends ConsumerState<SudokuScreen> {
               ),
               const SizedBox(height: 12),
 
-              // ── Tablero de Sudoku Adaptativo ──
+              // ── Tablero de Sudoku ──
               Center(
                 child: Container(
                   constraints: const BoxConstraints(maxWidth: 420),
@@ -429,22 +577,20 @@ class _SudokuScreenState extends ConsumerState<SudokuScreen> {
                               final estaSeleccionada = (_filaSeleccionada == r && _colSeleccionada == c);
                               final tieneConflicto = _tieneConflicto(r, c);
 
-                              // Resaltado de contexto
                               final mismaFilaOColumna = (_filaSeleccionada == r || _colSeleccionada == c);
                               final mismoNumero = (celdaSeleccionada > 0 && valor == celdaSeleccionada);
 
                               Color bgColor = Colors.white;
                               if (tieneConflicto) {
-                                bgColor = const Color(0xFFFEE2E2); // Rojo suave
+                                bgColor = const Color(0xFFFEE2E2);
                               } else if (estaSeleccionada) {
-                                bgColor = const Color(0xFFBAE6FD); // Azul selección
+                                bgColor = const Color(0xFFBAE6FD);
                               } else if (mismoNumero) {
-                                bgColor = const Color(0xFFE0F2FE); // Azul coincidencia
+                                bgColor = const Color(0xFFE0F2FE);
                               } else if (mismaFilaOColumna) {
-                                bgColor = const Color(0xFFF8FAFC); // Gris muy suave
+                                bgColor = const Color(0xFFF8FAFC);
                               }
 
-                              // Bordes de cuadrícula gruesos para separar bloques
                               final borderRight = ((c + 1) % _bloqueCols == 0 && c != _tamano - 1)
                                   ? const BorderSide(color: AppColors.primaryTeal, width: 2.5)
                                   : const BorderSide(color: Color(0xFFE2E8F0), width: 1);
@@ -493,7 +639,7 @@ class _SudokuScreenState extends ConsumerState<SudokuScreen> {
               ),
               const SizedBox(height: 18),
 
-              // ── Teclado Numérico Grande Accesible ──
+              // ── Teclado Numérico Dinámico ──
               Container(
                 constraints: const BoxConstraints(maxWidth: 420),
                 child: Wrap(
@@ -540,7 +686,7 @@ class _SudokuScreenState extends ConsumerState<SudokuScreen> {
               ),
               const SizedBox(height: 20),
 
-              // ── Guía Amable para el Adulto Mayor ──
+              // ── Guía Didáctica ──
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
@@ -554,7 +700,7 @@ class _SudokuScreenState extends ConsumerState<SudokuScreen> {
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Completa la cuadrícula sin repetir números en la misma fila, columna o bloque. ¡Tómate tu tiempo, no hay prisa!',
+                        'Completa la cuadrícula sin repetir números en filas, columnas ni bloques. Las pistas te explican la técnica de deducción.',
                         style: TextStyle(fontSize: 13, color: AppColors.textPrimary, height: 1.3),
                       ),
                     ),

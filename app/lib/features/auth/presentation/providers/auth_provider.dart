@@ -111,10 +111,17 @@ class AuthNotifier extends _$AuthNotifier {
     }
   }
 
-  Future<bool> register(String nombre, String email, String password) async {
+  Future<bool> register(
+    String nombre,
+    String email,
+    String password, {
+    String rol = 'adulto_mayor',
+  }) async {
     state = state.copyWith(status: AuthStatus.loading, errorMessage: null);
     try {
-      final user = await ref.read(authRepositoryProvider).register(nombre, email, password);
+      final user = await ref
+          .read(authRepositoryProvider)
+          .register(nombre, email, password, rol: rol);
       state = AuthState(status: AuthStatus.authenticated, user: user, errorMessage: null);
       return true;
     } on DioException catch (e) {

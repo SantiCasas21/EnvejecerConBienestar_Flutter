@@ -11,7 +11,7 @@ schema_one = ActividadCognitivaSchema()
 @bp.route('/puntaje', methods=['POST'])
 @jwt_required()
 def guardar_puntaje():
-    """Guarda un nuevo puntaje."""
+    """Guarda un nuevo puntaje registrando opcionalmente su nivel de dificultad."""
     usuario_id = int(get_jwt_identity())
     data = request.get_json()
     
@@ -24,11 +24,23 @@ def guardar_puntaje():
 @bp.route('/historial', methods=['GET'])
 @jwt_required()
 def get_historial():
-    """Obtiene el historial de puntajes del usuario."""
+    """Obtiene el historial de puntajes del usuario o familiar con filtro de días."""
     usuario_id = int(get_jwt_identity())
-    limite = request.args.get('limite', default=20, type=int)
-    historial = JuegoService.get_historial(usuario_id, limite=limite)
-    return jsonify(schema_many.dump(historial)), 200
+    limite = request.args.get('limite', default=30, type=int)
+    dias = request.args.get('dias', default=None, type=int)
+    familiar_raw = str(request.args.get('familiar', 'false')).lower()
+    familiar = familiar_raw in ('true', '1', 'yes')
+    
+    historial = JuegoService.get_historial(usuario_id, dias=dias, familiar=familiar, limite=limite)
+    return jsonify(historial), 200
+
+@bp.route('/puntos-por-juego', methods=['GET'])
+@jwt_required()
+def get_puntos_por_juego():
+    """Obtiene los 5 minijuegos ordenados por puntos acumulados del usuario."""
+    usuario_id = int(get_jwt_identity())
+    resumen = JuegoService.get_puntos_por_juego(usuario_id)
+    return jsonify(resumen), 200
 
 @bp.route('/mejores', methods=['GET'])
 @jwt_required()
@@ -47,3 +59,12 @@ def get_estadisticas():
     usuario_id = int(get_jwt_identity())
     stats = JuegoService.get_estadisticas(usuario_id)
     return jsonify(stats), 200
+
+@bp.route('/podio-familiar', methods=['GET'])
+@jwt_required()
+def get_podio_familiar():
+    """Obtiene la tabla de posiciones y competencia sana del círculo familiar."""
+    usuario_id = int(get_jwt_identity())
+    tipo_juego = request.args.get('tipo_juego')
+    podio = JuegoService.get_podio_familiar(usuario_id, tipo_juego=tipo_juego)
+    return jsonify(podio), 200

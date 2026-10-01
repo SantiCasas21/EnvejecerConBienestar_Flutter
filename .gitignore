@@ -60,3 +60,9 @@ backend/*.sqlite3
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# ──────────────────────────────
+# IA y Bitácoras de Agentes
+# ──────────────────────────────
+ia/
+ia

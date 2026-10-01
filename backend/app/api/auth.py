@@ -24,7 +24,19 @@ def register():
     if Usuario.query.filter_by(email=email).first():
         return jsonify({"msg": "Ya existe una cuenta con este correo electrónico."}), 409
         
-    nuevo_usuario = Usuario(nombre=nombre, email=email)
+    rol_recibido = data.get('rol', 'adulto_mayor')
+    rol = 'cuidador' if str(rol_recibido).strip().lower() == 'cuidador' else 'adulto_mayor'
+    
+    codigo_vinculacion = None
+    if rol == 'adulto_mayor':
+        codigo_vinculacion = Usuario.generar_codigo_vinculacion()
+
+    nuevo_usuario = Usuario(
+        nombre=nombre,
+        email=email,
+        rol=rol,
+        codigo_vinculacion=codigo_vinculacion
+    )
     nuevo_usuario.set_password(password)
     
     db.session.add(nuevo_usuario)

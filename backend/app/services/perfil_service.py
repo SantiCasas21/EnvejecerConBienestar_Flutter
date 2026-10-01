@@ -32,6 +32,43 @@ class PerfilService:
         else:
             for key, value in valid_data.items():
                 setattr(perfil, key, value)
-        
+
+        # Sincronización automática con la libreta de contactos (Contacto de Emergencia SOS)
+        tel_emergencia = data.get('contacto_emergencia_telefono')
+        nombre_emergencia = data.get('contacto_emergencia_nombre')
+        parentesco_emergencia = data.get('contacto_emergencia_parentesco') or 'Familia'
+
+        if tel_emergencia and str(tel_emergencia).strip():
+            from app.models.contacto import Contacto
+            tel_limpio = str(tel_emergencia).strip()
+            nom_limpio = str(nombre_emergencia).strip() if nombre_emergencia else 'Contacto de Emergencia'
+
+            # Buscar si ya existe un contacto SOS o con el mismo teléfono para este usuario
+            contacto_existente = Contacto.query.filter(
+                Contacto.usuario_id == usuario_id,
+                (Contacto.es_emergencia == True) | (Contacto.telefono == tel_limpio)
+            ).first()
+
+            if contacto_existente:
+                contacto_existente.nombre = nom_limpio
+                contacto_existente.telefono = tel_limpio
+                contacto_existente.categoria = parentesco_emergencia
+                contacto_existente.es_emergencia = True
+                contacto_existente.es_favorito = True
+                if not contacto_existente.icono or contacto_existente.icono == '👤':
+                    contacto_existente.icono = '🚨'
+            else:
+                nuevo_contacto = Contacto(
+                    usuario_id=usuario_id,
+                    nombre=nom_limpio,
+                    telefono=tel_limpio,
+                    categoria=parentesco_emergencia,
+                    es_emergencia=True,
+                    es_favorito=True,
+                    icono='🚨'
+                )
+                db.session.add(nuevo_contacto)
+
         db.session.commit()
         return perfil
+

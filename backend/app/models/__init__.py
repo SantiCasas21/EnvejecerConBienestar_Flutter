@@ -7,3 +7,4 @@ from .habito import Habito
 from .actividad_cognitiva import ActividadCognitiva
 from .meta import Meta
 from .perfil import PerfilUsuario
+from .cuidador_paciente import CuidadorPaciente

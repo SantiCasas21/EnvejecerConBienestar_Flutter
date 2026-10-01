@@ -20,6 +20,27 @@ def create_app(config_class=DevelopmentConfig) -> Flask:
 
     # Inicializar extensiones
     db.init_app(app)
+    
+    # Comprobación de resiliencia: Si PostgreSQL no está disponible en desarrollo local,
+    # se activa la base de datos SQLite offline para no bloquear la app.
+    with app.app_context():
+        if not app.config.get('TESTING') and 'sqlite' not in app.config.get('SQLALCHEMY_DATABASE_URI', ''):
+            try:
+                conn = db.engine.connect()
+                conn.close()
+            except Exception as e:
+                offline_db = os.path.join(app.root_path, '..', 'offline_envejecer.db')
+                app.logger.warning(
+                    f"⚠️ PostgreSQL principal no disponible ({e}). Activando fallback SQLite offline."
+                )
+                app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.abspath(offline_db)}"
+                db.engine.dispose()
+                db.init_app(app)
+
+        if not app.config.get('TESTING'):
+            from app.utils.db_migrations import run_db_migrations
+            run_db_migrations()
+
     migrate.init_app(app, db)
     jwt.init_app(app)
     

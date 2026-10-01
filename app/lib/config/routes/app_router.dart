@@ -8,11 +8,13 @@ import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
+import '../../features/home/presentation/screens/cuidador_dashboard_screen.dart';
 import '../../features/medicamentos/presentation/screens/medicamentos_screen.dart';
 import '../../features/medicamentos/presentation/screens/medicamento_detail_screen.dart';
 import '../../features/juegos/presentation/screens/juegos_screen.dart';
 import '../../features/juegos/presentation/screens/buscar_pares_screen.dart';
 import '../../features/juegos/presentation/screens/ordenar_secuencia_screen.dart';
+import '../../features/juegos/presentation/screens/secuencia_luces_screen.dart';
 import '../../features/juegos/presentation/screens/sopa_letras_screen.dart';
 import '../../features/juegos/presentation/screens/trivia_screen.dart';
 import '../../features/juegos/presentation/screens/sudoku_screen.dart';
@@ -107,7 +109,13 @@ GoRouter goRouter(Ref ref) {
             routes: [
               GoRoute(
                 path: '/',
-                builder: (context, state) => const HomeScreen(),
+                builder: (context, state) {
+                  final user = authState.user;
+                  if (user != null && user.esCuidador) {
+                    return const CuidadorDashboardScreen();
+                  }
+                  return const HomeScreen();
+                },
               ),
             ],
           ),
@@ -138,8 +146,12 @@ GoRouter goRouter(Ref ref) {
                     builder: (context, state) => const BuscarParesScreen(),
                   ),
                   GoRoute(
+                    path: 'secuencia-luces',
+                    builder: (context, state) => const SecuenciaLucesScreen(),
+                  ),
+                  GoRoute(
                     path: 'ordenar-secuencia',
-                    builder: (context, state) => const OrdenarSecuenciaScreen(),
+                    builder: (context, state) => const SecuenciaLucesScreen(),
                   ),
                   GoRoute(
                     path: 'sopa-letras',
@@ -202,6 +214,7 @@ class AppRouter {
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(path: '/register', builder: (context, state) => const RegisterScreen()),
       GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
+      GoRoute(path: '/cuidador', builder: (context, state) => const CuidadorDashboardScreen()),
       GoRoute(path: '/medicamentos', builder: (context, state) => const MedicamentosScreen()),
       GoRoute(path: '/juegos', builder: (context, state) => const JuegosScreen()),
       GoRoute(path: '/contactos', builder: (context, state) => const ContactosScreen()),

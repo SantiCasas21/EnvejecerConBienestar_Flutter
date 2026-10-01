@@ -107,7 +107,10 @@ class MedicamentoCard extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
+                        Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 6,
+                          runSpacing: 2,
                           children: [
                             Text(
                               'Alarma: ${medicamento.horaAlarma12}',
@@ -117,7 +120,6 @@ class MedicamentoCard extends ConsumerWidget {
                                 color: tomado ? AppColors.textSecondary : AppColors.primaryDark,
                               ),
                             ),
-                            const SizedBox(width: 8),
                             Text(
                               '(${medicamento.tomasPorDia} ${medicamento.tomasPorDia == 1 ? "toma" : "tomas"}/día)',
                               style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, fontWeight: FontWeight.w500),

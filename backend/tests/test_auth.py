@@ -3,7 +3,7 @@ def test_register(client):
     response = client.post('/api/auth/register', json={
         'nombre': 'Nuevo',
         'email': 'nuevo@example.com',
-        'password': 'pass'
+        'password': 'password123'
     })
     assert response.status_code == 201
     assert b'exitosamente' in response.data

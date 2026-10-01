@@ -8,6 +8,7 @@ import '../../data/models/medicamento_model.dart';
 import '../../data/models/tratamiento_model.dart';
 import '../providers/medicamentos_provider.dart';
 import '../providers/tratamientos_provider.dart';
+import 'alarma_toma_dialog.dart';
 
 class MedicamentoPopupDialog extends ConsumerWidget {
   final Medicamento medicamento;
@@ -151,19 +152,36 @@ class MedicamentoPopupDialog extends ConsumerWidget {
                 children: [
                   const Icon(Icons.alarm_rounded, color: AppColors.primaryTeal, size: 24),
                   const SizedBox(width: 8),
-                  Text(
-                    'Alarmas y Horario del Día',
-                    style: AppTypography.subtitulo().copyWith(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                  Expanded(
+                    child: Text(
+                      'Alarmas y Horario del Día',
+                      style: AppTypography.subtitulo().copyWith(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryLight,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '${horas.length} ${horas.length == 1 ? "toma" : "tomas"}/día',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primaryDark,
+                      ),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 10),
 
-              // Lista de alarmas del día
+              // Lista de alarmas del día y personalización
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
@@ -172,6 +190,7 @@ class MedicamentoPopupDialog extends ConsumerWidget {
                   border: Border.all(color: AppColors.border),
                 ),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     ...horas.asMap().entries.map((entry) {
                       final idx = entry.key + 1;
@@ -179,7 +198,7 @@ class MedicamentoPopupDialog extends ConsumerWidget {
                       final horaTexto12 = Medicamento.formatearTimeOfDay(hora);
 
                       return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 6.0),
+                        padding: const EdgeInsets.symmetric(vertical: 5.0),
                         child: Row(
                           children: [
                             Container(
@@ -209,32 +228,130 @@ class MedicamentoPopupDialog extends ConsumerWidget {
                         ),
                       );
                     }),
-                    const SizedBox(height: 10),
-                    // Botón de prueba sonora
+                    const SizedBox(height: 8),
+
+                    // Tarjeta de Vista Previa de la Notificación Personalizada
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF0FDF4),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFF86EFAC)),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('💬', style: TextStyle(fontSize: 20)),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Aviso personalizado en tu teléfono:',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF15803D),
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  '🔔 Hora de tu medicina: ${med.nombre} (${med.miligramos != null ? "${med.miligramos} mg" : ""}). ${med.notas?.isNotEmpty == true ? med.notas! : "¡Tu salud es lo primero!"}',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF166534),
+                                    height: 1.3,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Botón para Probar / Ver la Pantalla de Alarma Activa
                     SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        icon: const Icon(Icons.volume_up_rounded, size: 20, color: AppColors.primaryTeal),
-                        label: const Text('Probar Alarma Sonora', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.primaryTeal)),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: AppColors.primaryTeal, width: 1.5),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          padding: const EdgeInsets.symmetric(vertical: 10),
+                      height: 48,
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.alarm_on_rounded, size: 22),
+                        label: const Text(
+                          'Ver Pantalla de Alarma Activa',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                         ),
-                        onPressed: () async {
-                          await NotificationService.probarAlarmaSonora();
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('🔔 Alarma de prueba para ${med.nombre}'),
-                                backgroundColor: AppColors.healthGreen,
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              ),
-                            );
-                          }
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryTeal,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 1,
+                        ),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          AlarmaTomaDialog.mostrar(
+                            context: context,
+                            medicamento: med,
+                          );
                         },
                       ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Botones complementarios de sonido y sincronización
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            icon: const Icon(Icons.volume_up_rounded, size: 18, color: AppColors.primaryTeal),
+                            label: const Text('Probar Sonido', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primaryTeal)),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: AppColors.primaryTeal, width: 1.2),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                            ),
+                            onPressed: () async {
+                              await NotificationService.probarAlarmaSonora();
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('🔔 Probando sonido de alarma para ${med.nombre}'),
+                                    backgroundColor: AppColors.healthGreen,
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            icon: const Icon(Icons.sync_rounded, size: 18, color: AppColors.primaryTeal),
+                            label: const Text('Sincronizar', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primaryTeal)),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: AppColors.primaryTeal, width: 1.2),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                            ),
+                            onPressed: () async {
+                              await NotificationService.programarRecordatorioMedicamento(med);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('✅ Alarmas sincronizadas para ${med.nombre}'),
+                                    backgroundColor: AppColors.healthGreen,
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -247,12 +364,14 @@ class MedicamentoPopupDialog extends ConsumerWidget {
                 children: [
                   const Icon(Icons.inventory_2_outlined, color: AppColors.primaryTeal, size: 24),
                   const SizedBox(width: 8),
-                  Text(
-                    'Inventario en Botiquín',
-                    style: AppTypography.subtitulo().copyWith(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                  Expanded(
+                    child: Text(
+                      'Inventario en Botiquín',
+                      style: AppTypography.subtitulo().copyWith(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                   ),
                 ],

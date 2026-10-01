@@ -11,10 +11,13 @@ class Usuario(db.Model):
     nombre = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(256), nullable=False)
+    rol = db.Column(db.String(30), default='adulto_mayor', nullable=False)  # 'adulto_mayor' o 'cuidador'
+    codigo_vinculacion = db.Column(db.String(12), unique=True, index=True, nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     # Relaciones
     perfil = db.relationship('PerfilUsuario', backref='usuario', uselist=False, cascade='all, delete-orphan')
+    tratamientos = db.relationship('Tratamiento', backref='usuario', lazy='dynamic', cascade='all, delete-orphan')
     medicamentos = db.relationship('Medicamento', backref='usuario', lazy='dynamic', cascade='all, delete-orphan')
     contactos = db.relationship('Contacto', backref='usuario', lazy='dynamic', cascade='all, delete-orphan')
     habitos = db.relationship('Habito', backref='usuario', lazy='dynamic', cascade='all, delete-orphan')
@@ -29,11 +32,30 @@ class Usuario(db.Model):
         """Verifica si la contraseña dada coincide con el hash."""
         return check_password_hash(self.password_hash, password)
 
+    @classmethod
+    def generar_codigo_vinculacion(cls) -> str:
+        """Genera un código único secuencial (ej: ECB-1001, ECB-1002...)."""
+        usuarios_con_codigo = cls.query.filter(cls.codigo_vinculacion.isnot(None)).all()
+        max_num = 1000
+        for u in usuarios_con_codigo:
+            if u.codigo_vinculacion and u.codigo_vinculacion.startswith("ECB-"):
+                parte = u.codigo_vinculacion.split("-", 1)[1]
+                if parte.isdigit():
+                    val = int(parte)
+                    if val > max_num:
+                        max_num = val
+        siguiente = max_num + 1
+        while cls.query.filter_by(codigo_vinculacion=f"ECB-{siguiente}").first():
+            siguiente += 1
+        return f"ECB-{siguiente}"
+
     def to_dict(self) -> dict:
         """Retorna representación en diccionario."""
         return {
             "id": self.id,
             "nombre": self.nombre,
             "email": self.email,
+            "rol": self.rol or 'adulto_mayor',
+            "codigo_vinculacion": self.codigo_vinculacion,
             "created_at": self.created_at.isoformat() if self.created_at else None
         }

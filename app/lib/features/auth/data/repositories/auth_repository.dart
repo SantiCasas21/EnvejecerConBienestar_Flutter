@@ -31,13 +31,19 @@ class AuthRepository {
     return UsuarioModel.fromJson(data['usuario']);
   }
 
-  Future<UsuarioModel> register(String nombre, String email, String password) async {
+  Future<UsuarioModel> register(
+    String nombre,
+    String email,
+    String password, {
+    String rol = 'adulto_mayor',
+  }) async {
     final response = await _dio.post(
       '/auth/register',
       data: {
         'nombre': nombre.trim(),
         'email': email.trim().toLowerCase(),
         'password': password,
+        'rol': rol,
       },
     );
 

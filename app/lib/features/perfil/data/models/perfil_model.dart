@@ -13,20 +13,27 @@ class PerfilModel with _$PerfilModel {
     @JsonKey(name: 'usuario_id') int? usuarioId,
     
     // ── Datos Personales y Biométricos ──
+    @JsonKey(name: 'tipo_documento', defaultValue: 'CC') @Default('CC') String? tipoDocumento,
+    @JsonKey(name: 'numero_documento') String? numeroDocumento,
     @JsonKey(name: 'fecha_nacimiento') String? fechaNacimiento,
     int? edad,
     @Default('No especificado') String genero,
     @JsonKey(name: 'tipo_sangre', defaultValue: 'O+') @Default('O+') String? tipoSangre,
     double? peso, // en kg
     double? altura, // en cm
+    @JsonKey(name: 'presion_habitual') String? presionHabitual,
+    @JsonKey(name: 'nivel_movilidad', defaultValue: 'Independiente') @Default('Independiente') String? nivelMovilidad,
     
     // ── Cobertura y Cuidados Clínicos ──
     @Default('No especificada') String eps,
+    @JsonKey(name: 'regimen_eps', defaultValue: 'Contributivo') @Default('Contributivo') String? regimenEps,
     String? telefono,
     @Default('Ninguna') String alergias,
     @Default('Ninguna') String condiciones,
     @Default('Ninguna') String cirugias,
     @JsonKey(name: 'dispositivos_medicos') @Default('Ninguno') String dispositivosMedicos,
+    @JsonKey(name: 'restricciones_alimentarias', defaultValue: 'Ninguna') @Default('Ninguna') String? restriccionesAlimentarias,
+    @JsonKey(name: 'antecedentes_familiares', defaultValue: 'Ninguno') @Default('Ninguno') String? antecedentesFamiliares,
     
     // ── Contactos de Emergencia y Red Médica ──
     @JsonKey(name: 'contacto_emergencia_nombre') String? contactoEmergenciaNombre,

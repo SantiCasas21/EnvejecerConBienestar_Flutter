@@ -13,13 +13,14 @@ void main() {
       ),
     );
 
-    // Verify title is rendered
-    expect(find.text('🔢 Sudoku Senior'), findsOneWidget);
+    // Verify title and BotonVolverJuegos are rendered
+    expect(find.text('🔢 Sudoku'), findsOneWidget);
+    expect(find.text('Volver a Juegos'), findsOneWidget);
 
     // Verify initial difficulty chips are visible
-    expect(find.text('4x4 Estimulación'), findsOneWidget);
+    expect(find.text('4x4 Básico'), findsOneWidget);
     expect(find.text('6x6 Intermedio'), findsOneWidget);
-    expect(find.text('9x9 Clásico'), findsOneWidget);
+    expect(find.text('9x9 Avanzado'), findsOneWidget);
 
     // Verify hint button is present
     expect(find.text('💡 Pedir Pista'), findsOneWidget);

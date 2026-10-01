@@ -27,6 +27,14 @@ class TratamientoService:
         
         columnas_validas = {c.name for c in Tratamiento.__table__.columns}
         datos_filtrados = {k: v for k, v in data.items() if k in columnas_validas}
+
+        from datetime import date as dt_date
+        for date_col in ['fecha_inicio', 'fecha_fin', 'fecha_ultima_revision', 'proxima_cita']:
+            if date_col in datos_filtrados and isinstance(datos_filtrados[date_col], str):
+                try:
+                    datos_filtrados[date_col] = dt_date.fromisoformat(datos_filtrados[date_col])
+                except Exception:
+                    pass
         
         tratamiento = Tratamiento(usuario_id=usuario_id, **datos_filtrados)
         db.session.add(tratamiento)
@@ -50,8 +58,15 @@ class TratamientoService:
             
         medicamento_ids = data.pop('medicamento_ids', None)
         columnas_validas = {c.name for c in Tratamiento.__table__.columns}
+
+        from datetime import date as dt_date
         for key, value in data.items():
             if key in columnas_validas and hasattr(tratamiento, key):
+                if key in ['fecha_inicio', 'fecha_fin', 'fecha_ultima_revision', 'proxima_cita'] and isinstance(value, str):
+                    try:
+                        value = dt_date.fromisoformat(value)
+                    except Exception:
+                        pass
                 setattr(tratamiento, key, value)
 
         if medicamento_ids is not None and isinstance(medicamento_ids, list):

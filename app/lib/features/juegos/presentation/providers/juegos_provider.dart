@@ -13,6 +13,35 @@ final historialJuegosProvider = FutureProvider<List<ActividadCognitiva>>((ref) a
   return repo.getHistorial();
 });
 
+class HistorialParams {
+  final int? dias;
+  final bool familiar;
+  const HistorialParams({this.dias, this.familiar = false});
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is HistorialParams &&
+          runtimeType == other.runtimeType &&
+          dias == other.dias &&
+          familiar == other.familiar;
+
+  @override
+  int get hashCode => dias.hashCode ^ familiar.hashCode;
+}
+
+/// Proveedor de historial filtrable por días y por círculo familiar
+final historialFiltradoProvider = FutureProvider.family<List<ActividadCognitiva>, HistorialParams>((ref, params) async {
+  final repo = ref.watch(juegoRepositoryProvider);
+  return repo.getHistorial(dias: params.dias, familiar: params.familiar);
+});
+
+/// Proveedor de los 5 minijuegos ordenados por puntos acumulados
+final puntosPorJuegoProvider = FutureProvider<List<PuntosPorJuegoModel>>((ref) async {
+  final repo = ref.watch(juegoRepositoryProvider);
+  return repo.getPuntosPorJuego();
+});
+
 /// Proveedor del Top 3 (o personalizado) con copitas, filtrable por tipo de juego
 final mejoresPuntajesProvider = FutureProvider.family<List<ActividadCognitiva>, String?>((ref, tipoJuego) async {
   final repo = ref.watch(juegoRepositoryProvider);
@@ -25,6 +54,12 @@ final estadisticasJuegosProvider = FutureProvider<EstadisticasJuegosModel>((ref)
   return repo.getEstadisticas();
 });
 
+/// Proveedor de podio familiar por tipo de juego (o global si tipoJuego es null)
+final podioFamiliarProvider = FutureProvider.family<PodioFamiliarRespuestaModel, String?>((ref, tipoJuego) async {
+  final repo = ref.watch(juegoRepositoryProvider);
+  return repo.getPodioFamiliar(tipoJuego: tipoJuego);
+});
+
 /// Notifier para guardar puntajes y refrescar automáticamente el historial y podio
 final guardarPuntajeNotifierProvider = Provider((ref) {
   return GuardarPuntajeManager(ref);
@@ -34,23 +69,40 @@ class GuardarPuntajeManager {
   final Ref _ref;
   GuardarPuntajeManager(this._ref);
 
-  Future<ActividadCognitiva?> registrarPuntaje({
+  Future<int?> registrarPuntaje({
     required String tipoJuego,
     required int puntaje,
+    String nivelDificultad = 'intermedio',
   }) async {
     try {
       final repo = _ref.read(juegoRepositoryProvider);
-      final resultado = await repo.guardarPuntaje({
+
+      // Consultamos los mejores antes de guardar para ver si este puntaje entra al podio
+      final previos = await repo.getMejoresPuntajes(tipoJuego: tipoJuego, limite: 3);
+      int? posicionPodio;
+      if (previos.isEmpty || puntaje >= previos[0].puntaje) {
+        posicionPodio = 1;
+      } else if (previos.length < 2 || puntaje >= previos[1].puntaje) {
+        posicionPodio = 2;
+      } else if (previos.length < 3 || puntaje >= previos[2].puntaje) {
+        posicionPodio = 3;
+      }
+
+      await repo.guardarPuntaje({
         'tipo_juego': tipoJuego,
         'puntaje': puntaje,
+        'nivel_dificultad': nivelDificultad,
       });
 
-      // Invalidamos providers para que el Salón de la Fama se actualice de inmediato
+      // Invalidamos providers para que el Salón de la Fama y el podio se actualicen de inmediato
       _ref.invalidate(historialJuegosProvider);
+      _ref.invalidate(historialFiltradoProvider);
+      _ref.invalidate(puntosPorJuegoProvider);
       _ref.invalidate(mejoresPuntajesProvider);
       _ref.invalidate(estadisticasJuegosProvider);
+      _ref.invalidate(podioFamiliarProvider);
 
-      return resultado;
+      return posicionPodio;
     } catch (_) {
       return null;
     }

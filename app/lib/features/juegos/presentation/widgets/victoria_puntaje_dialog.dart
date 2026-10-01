@@ -7,6 +7,8 @@ class VictoriaPuntajeDialog extends StatelessWidget {
   final int puntaje;
   final String? mensajePersonalizado;
   final VoidCallback onJugarDeNuevo;
+  final VoidCallback? onCambiarModo;
+  final String? textoCambiarModo;
   final int? posicionTop; // 1, 2 o 3 si alcanzó podio
 
   const VictoriaPuntajeDialog({
@@ -14,6 +16,8 @@ class VictoriaPuntajeDialog extends StatelessWidget {
     required this.nombreJuego,
     required this.puntaje,
     required this.onJugarDeNuevo,
+    this.onCambiarModo,
+    this.textoCambiarModo,
     this.mensajePersonalizado,
     this.posicionTop,
   });
@@ -23,6 +27,8 @@ class VictoriaPuntajeDialog extends StatelessWidget {
     required String nombreJuego,
     required int puntaje,
     required VoidCallback onJugarDeNuevo,
+    VoidCallback? onCambiarModo,
+    String? textoCambiarModo,
     String? mensajePersonalizado,
     int? posicionTop,
   }) {
@@ -33,6 +39,8 @@ class VictoriaPuntajeDialog extends StatelessWidget {
         nombreJuego: nombreJuego,
         puntaje: puntaje,
         onJugarDeNuevo: onJugarDeNuevo,
+        onCambiarModo: onCambiarModo,
+        textoCambiarModo: textoCambiarModo,
         mensajePersonalizado: mensajePersonalizado,
         posicionTop: posicionTop,
       ),
@@ -187,6 +195,28 @@ class VictoriaPuntajeDialog extends StatelessWidget {
                 ),
               ),
             ),
+            if (onCambiarModo != null) ...[
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    onCambiarModo!();
+                  },
+                  icon: const Icon(Icons.grid_view_rounded, size: 20, color: AppColors.primaryTeal),
+                  label: Text(
+                    textoCambiarModo ?? 'Elegir otra Categoría',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryTeal),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.primaryTeal, width: 1.5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 10),
 
             // ── Botón Ir al Salón de Juegos ──
@@ -198,10 +228,10 @@ class VictoriaPuntajeDialog extends StatelessWidget {
                   Navigator.pop(context);
                   context.go('/juegos');
                 },
-                icon: const Icon(Icons.emoji_events_outlined, size: 20, color: AppColors.gamesViolet),
-                label: const Text('Ver Salón de Puntajes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.gamesViolet)),
+                icon: const Icon(Icons.emoji_events_outlined, size: 20, color: AppColors.primaryTeal),
+                label: const Text('Ver Salón de Puntajes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryTeal)),
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppColors.gamesViolet, width: 1.5),
+                  side: const BorderSide(color: AppColors.primaryTeal, width: 1.5),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
               ),

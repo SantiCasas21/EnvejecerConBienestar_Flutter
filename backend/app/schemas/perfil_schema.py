@@ -13,3 +13,5 @@ class PerfilUsuarioSchema(ma.SQLAlchemyAutoSchema):
 
     acepto_habeas_data = fields.Boolean(missing=False)
     fecha_habeas_data = fields.DateTime(dump_only=True)
+    imc = fields.Float(dump_only=True)
+    clasificacion_imc = fields.String(dump_only=True)
