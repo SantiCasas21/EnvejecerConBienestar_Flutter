@@ -63,6 +63,11 @@ abstract class AppColors {
 
   /// Líneas divisorias y bordes de tarjetas (#E2E8F0).
   static const Color border = Color(0xFFE2E8F0);
+  static const Color divider = Color(0xFFE2E8F0); // Alias
+  static const Color backgroundLight = Color(0xFFF8FAFC); // Alias
+  static const Color successGreen = Color(0xFF059669); // Verde Salud oficial
+  static const Color warningAmber = Color(0xFFD97706); // Ámbar Cálido oficial
+  static const Color secondaryIndigo = Color(0xFF818CF8); // Lavanda/Índigo
   
   /// Sombra suave para dar relieve tridimensional táctil a los botones.
   static const Color shadow = Color(0x20000000);

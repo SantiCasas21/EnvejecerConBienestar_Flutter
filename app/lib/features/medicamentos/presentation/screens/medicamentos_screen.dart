@@ -627,6 +627,13 @@ class _MedicamentosScreenState extends ConsumerState<MedicamentosScreen> {
             ),
             backgroundColor: Colors.transparent,
             elevation: 0,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.history_rounded, size: 28, color: AppColors.primaryTeal),
+                tooltip: 'Ver Historial del Paciente',
+                onPressed: () => context.push('/historial?paciente_id=${pacienteActivo.id}'),
+              ),
+            ],
             leading: Navigator.canPop(context)
                 ? IconButton(
                     icon: const Icon(Icons.arrow_back),
@@ -1249,6 +1256,11 @@ class _MedicamentosScreenState extends ConsumerState<MedicamentosScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.history_rounded, size: 28, color: AppColors.primaryTeal),
+            tooltip: 'Ver Historial de Tomas y Hábitos',
+            onPressed: () => context.push('/historial'),
+          ),
           IconButton(
             icon: const Icon(Icons.picture_as_pdf_rounded, size: 28, color: AppColors.primaryTeal),
             tooltip: 'Exportar Reporte Médico PDF',

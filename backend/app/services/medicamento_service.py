@@ -20,10 +20,31 @@ class MedicamentoService:
         return Medicamento.query.filter_by(id=id, usuario_id=usuario_id).first()
 
     @staticmethod
+    def _coerce_tipos(data: Dict[str, Any]) -> Dict[str, Any]:
+        """Convierte cadenas ISO a time o date si es necesario para SQLAlchemy SQLite."""
+        from datetime import datetime as dt
+        res = dict(data)
+        if 'hora_alarma' in res and isinstance(res['hora_alarma'], str):
+            try:
+                res['hora_alarma'] = dt.strptime(res['hora_alarma'], '%H:%M').time()
+            except Exception:
+                try:
+                    res['hora_alarma'] = dt.strptime(res['hora_alarma'], '%H:%M:%S').time()
+                except Exception:
+                    pass
+        if 'fecha_inicio' in res and isinstance(res['fecha_inicio'], str):
+            try:
+                res['fecha_inicio'] = dt.strptime(res['fecha_inicio'], '%Y-%m-%d').date()
+            except Exception:
+                pass
+        return res
+
+    @staticmethod
     def create(data: Dict[str, Any], usuario_id: int) -> Medicamento:
         """Crea un nuevo medicamento asegurando filtrado estricto de columnas válidas."""
         columnas_validas = {c.name for c in Medicamento.__table__.columns}
-        datos_filtrados = {k: v for k, v in data.items() if k in columnas_validas}
+        datos_coercionados = MedicamentoService._coerce_tipos(data)
+        datos_filtrados = {k: v for k, v in datos_coercionados.items() if k in columnas_validas}
         
         medicamento = Medicamento(usuario_id=usuario_id, **datos_filtrados)
         db.session.add(medicamento)
@@ -38,7 +59,8 @@ class MedicamentoService:
             return None
         
         columnas_validas = {c.name for c in Medicamento.__table__.columns}
-        for key, value in data.items():
+        datos_coercionados = MedicamentoService._coerce_tipos(data)
+        for key, value in datos_coercionados.items():
             if key in columnas_validas and hasattr(medicamento, key):
                 setattr(medicamento, key, value)
                 
@@ -65,13 +87,23 @@ class MedicamentoService:
             
         medicamento.esta_tomado = not medicamento.esta_tomado
 
-        # Gestión automática del inventario de pastillas
+        # Gestión automática del inventario de pastillas y registro histórico
+        from app.services.historial_service import HistorialService
         if medicamento.esta_tomado:
             if medicamento.cantidad_restante is not None and medicamento.cantidad_restante > 0:
                 medicamento.cantidad_restante -= 1
+            HistorialService.registrar_toma(
+                usuario_id=usuario_id,
+                medicamento_id=medicamento.id,
+                estado='tomada'
+            )
         else:
             if medicamento.cantidad_restante is not None:
                 medicamento.cantidad_restante += 1
+            HistorialService.eliminar_toma_hoy(
+                usuario_id=usuario_id,
+                medicamento_id=medicamento.id
+            )
 
         db.session.commit()
         return medicamento

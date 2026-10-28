@@ -986,6 +986,29 @@ class _CuidadorDashboardScreenState
                 ),
               ),
             ),
+            const SizedBox(height: 8),
+            // Botón Historial de Tomas del Paciente
+            SizedBox(
+              width: double.infinity,
+              height: 46,
+              child: OutlinedButton.icon(
+                onPressed: () => context.push('/historial?paciente_id=${p.id}'),
+                icon: const Icon(Icons.history_rounded, size: 20, color: AppColors.primaryTeal),
+                label: const Text(
+                  '📅 Ver Historial de Tomas del Paciente',
+                  style: TextStyle(
+                    fontFamily: 'Nunito',
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primaryTeal,
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: AppColors.primaryTeal.withValues(alpha: 0.6)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+            ),
             const SizedBox(height: 10),
 
             // Botones Secundarios: Ficha Clínica, WhatsApp y Llamada

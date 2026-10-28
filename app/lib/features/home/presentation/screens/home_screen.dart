@@ -519,6 +519,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     );
                   },
                 ),
+                const SizedBox(height: 18),
+                InkWell(
+                  onTap: () => context.push('/historial'),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.primaryTeal.withValues(alpha: 0.3)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.02),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: const [
+                        Icon(Icons.history_rounded, color: AppColors.primaryTeal, size: 26),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Ver Historial de Tomas y Hábitos Anteriores',
+                            style: TextStyle(
+                              fontFamily: 'Nunito',
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primaryDark,
+                            ),
+                          ),
+                        ),
+                        Icon(Icons.arrow_forward_ios_rounded, size: 16, color: AppColors.primaryTeal),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ),
           ),

@@ -13,7 +13,6 @@ import '../../features/medicamentos/presentation/screens/medicamentos_screen.dar
 import '../../features/medicamentos/presentation/screens/medicamento_detail_screen.dart';
 import '../../features/juegos/presentation/screens/juegos_screen.dart';
 import '../../features/juegos/presentation/screens/buscar_pares_screen.dart';
-import '../../features/juegos/presentation/screens/ordenar_secuencia_screen.dart';
 import '../../features/juegos/presentation/screens/secuencia_luces_screen.dart';
 import '../../features/juegos/presentation/screens/sopa_letras_screen.dart';
 import '../../features/juegos/presentation/screens/trivia_screen.dart';
@@ -22,6 +21,7 @@ import '../../features/contactos/presentation/screens/contactos_screen.dart';
 import '../../features/contactos/presentation/screens/contacto_detail_screen.dart';
 import '../../features/perfil/presentation/screens/perfil_screen.dart';
 import '../../features/perfil/presentation/screens/editar_perfil_screen.dart';
+import '../../features/historial/presentation/screens/historial_screen.dart';
 
 part 'app_router.g.dart';
 
@@ -95,6 +95,18 @@ GoRouter goRouter(Ref ref) {
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/historial',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final pacienteId = state.uri.queryParameters['paciente_id'];
+          final fecha = state.uri.queryParameters['fecha'];
+          return HistorialScreen(
+            pacienteId: pacienteId != null ? int.tryParse(pacienteId) : null,
+            fechaInicial: fecha,
+          );
+        },
       ),
       GoRoute(
         path: '/register',
@@ -219,6 +231,7 @@ class AppRouter {
       GoRoute(path: '/juegos', builder: (context, state) => const JuegosScreen()),
       GoRoute(path: '/contactos', builder: (context, state) => const ContactosScreen()),
       GoRoute(path: '/perfil', builder: (context, state) => const PerfilScreen()),
+      GoRoute(path: '/historial', builder: (context, state) => const HistorialScreen()),
     ],
   );
 }

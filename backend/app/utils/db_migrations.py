@@ -40,7 +40,8 @@ def run_db_migrations() -> None:
     ]
 
     try:
-        # Asegurar creación de tablas si es base nueva
+        # Asegurar creación de tablas si es base nueva o tabla nueva
+        from app.models.historial_toma import HistorialToma
         db.create_all()
 
         with engine.connect() as conn:
