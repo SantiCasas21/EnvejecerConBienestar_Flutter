@@ -26,9 +26,8 @@ class MetaService:
         if not meta:
             return None
         
-        meta.progreso += valor
-        if meta.progreso >= meta.objetivo:
-            meta.completada = True
+        meta.progreso = max(0, meta.progreso + valor)
+        meta.completada = meta.progreso >= meta.objetivo
             
         db.session.commit()
         return meta

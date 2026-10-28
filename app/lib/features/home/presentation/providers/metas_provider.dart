@@ -16,10 +16,10 @@ class MetasNotifier extends _$MetasNotifier {
     state = AsyncValue.data([newMeta, ...?state.value]);
   }
 
-  Future<void> incrementarProgreso(int id) async {
+  Future<void> incrementarProgreso(int id, {int valor = 1}) async {
     final updated = await ref
         .read(metaRepositoryProvider)
-        .incrementarProgreso(id);
+        .incrementarProgreso(id, valor: valor);
     state = AsyncValue.data(
       state.value?.map((m) => m.id == id ? updated : m).toList() ?? [],
     );

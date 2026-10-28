@@ -150,3 +150,36 @@ Los familiares o cuidadores vinculados mediante el código `ECB-XXXX` pueden con
 ---
 
 *Envejecer con Bienestar — Cuidando a quienes nos cuidaron, con amor, tecnología y serenidad.* 🌸
+
+---
+
+## 🌿 6. Centro de Hábitos Interactivos y Nuevo Diseño del Inicio
+
+El bienestar de la persona mayor va más allá de las pastillas: depende de la hidratación, el movimiento, el afecto y la estimulación mental. Para honrar esto sin abrumar la pantalla inicial, la pantalla de **Inicio (`HomeScreen`)** cuenta con un **Selector Segmentado Superior**:
+
+```
++─────────────────────────────────────────────────────────────────────────────+
+|               [ ☀️ Mi Día y Salud ]       [ 🌿 Hábitos Vitales ]            |
++─────────────────────────────────────────────────────────────────────────────+
+```
+
+### 1. Pestaña "Mi Día y Salud":
+* Saludo afectivo dinámico con fecha completa en español (ej. *Miércoles, 28 de octubre*).
+* Botón de Emergencia SOS destacado de $72$dp de alto en Rojo Carmesí (`#E11D48`).
+* Tarjeta de Próxima Dosis Pendiente con botón ancho `[ Tomar ]` para confirmar en un solo toque.
+* Tarjeta destacada de acceso al Gimnasio Mental y Juegos Cognitivos.
+* **Mini Resumen de Hábitos:** Barra de progreso visual con botón `[ Explorar y Registrar Mis Hábitos ➔ ]` para pasar inmediatamente al centro de vitalidad.
+
+### 2. Pestaña "Hábitos Vitales" (Los 8 Pilares de la Geriatría Activa):
+Cada hábito cuenta con una tarjeta táctil interactiva especializada (`HabitoInteractivoCard`):
+1. **💧 Hidratación:** 8 vasitos interactivos que se llenan al tocarlos, más botón ancho `[ Tomar 1 Vaso ]`.
+2. **🚶 Caminata y Movimiento:** Suma rápida de minutos activos con botones `[ +10 min ]`, `[ +15 min ]` y `[ +30 min ]`.
+3. **☀️ Baño de Sol y Vitamina D:** Registro en 1 toque de los 15 minutos recomendados para fijar calcio y mejorar el ánimo.
+4. **🧘 Pausas Activas y Estiramientos:** Confirmación de movilidad para hombros, cuello y articulaciones.
+5. **😴 Sueño y Descanso:** Evaluación sencilla de la noche anterior mediante 3 caritas táctiles sonrientes.
+6. **🥗 Nutrición Saludable:** Registro de frutas, vegetales y comida balanceada con chips visuales.
+7. **📞 Afecto y Conexión Familiar:** Registro de llamadas o visitas con seres queridos, promoviendo la salud emocional.
+8. **🧠 Gimnasio Mental:** Registro de lectura, sudokus o juegos cognitivos.
+
+### 3. Diálogo de Creación Asistida (`AddMetaDialog`):
+Si el usuario desea agregar o personalizar una meta, el diálogo ofrece el catálogo de los 8 pilares listos para seleccionar con un toque, además de botones numéricos `[-]` y `[+]` de $48$dp para ajustar la meta diaria sin obligar a escribir en el teclado.

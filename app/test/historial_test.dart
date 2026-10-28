@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:envejecer_con_bienestar/features/historial/data/models/historial_toma_model.dart';
 import 'package:envejecer_con_bienestar/features/historial/data/models/resumen_adherencia_model.dart';
 import 'package:envejecer_con_bienestar/features/historial/data/repositories/historial_repository.dart';
-import 'package:envejecer_con_bienestar/features/historial/presentation/providers/historial_provider.dart';
 import 'package:envejecer_con_bienestar/features/historial/presentation/screens/historial_screen.dart';
 import 'package:envejecer_con_bienestar/features/historial/presentation/widgets/selector_fecha_carousel.dart';
 import 'package:envejecer_con_bienestar/features/historial/presentation/widgets/tarjeta_adherencia_diaria.dart';

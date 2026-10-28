@@ -2,7 +2,7 @@
 
 > **Documento Oficial de Seguimiento, Arquitectura y Estado de Madurez**  
 > **Última actualización:** Octubre 2026 | **Versión:** 1.7.0-dev  
-> **Estado Global:** 🟢 Módulos 1 al 7 Certificados al 100% (107/107 Pruebas Pasando) | 🟡 Módulo 8 en Preparación
+> **Estado Global:** 🟢 Módulos 1 al 7 Certificados al 100% (113/113 Pruebas Pasando) | 🟡 Módulo 8 en Preparación
 
 ---
 
@@ -69,7 +69,7 @@ Siguiendo los estándares internacionales de accesibilidad **WCAG AAA** para usu
 | **4** | **Gimnasio Mental (Minijuegos)** | 🟢 Completado | 5 minijuegos cognitivos (Sudoku, Pares, Sopa, Trivia, Simón), 3 niveles, botón "Volver a Juegos" y Podio Familiar. | 🟢 76/76 pruebas (100%) |
 | **5** | **Recordatorios y Alarmas** | 🟢 Completado | Motor de alarmas nativo con timezone Bogotá, snooze 10 min, diálogo accesible (`AlarmaTomaDialog`) y aviso por WhatsApp. | 🟢 91/91 pruebas (100%) |
 | **6** | **Inventario (Botiquín Virtual)** | 🟢 Completado | Semáforo de stock (🟢/⚠️/🔴), cálculo de días de autonomía, descuento automático por toma y recarga rápida (+10/+30). | 🟢 Pruebas Unitarias y UI OK |
-| **7** | **Historial y Hábitos de Salud** | 🟢 Completado | Entidad inmutable `HistorialToma`, carrusel de fechas táctil, gauge de adherencia positiva, tomas cronológicas y hábitos de bienestar. | 🟢 107/107 pruebas (100%: 42 Flask + 65 Flutter) |
+| **7** | **Historial y Hábitos de Salud** | 🟢 Completado | Entidad inmutable `HistorialToma`, carrusel de fechas táctil, gauge de adherencia positiva, tomas cronológicas y hábitos de bienestar. | 🟢 113/113 pruebas (100%: 42 Flask + 71 Flutter) |
 | **8** | **Estadísticas y Reportes** | 🟡 En Preparación | Gráficas semanales/mensuales de cumplimiento y reporte exportable en texto amigable para WhatsApp. | ⏳ Parcial (vía PDF) |
 | **9** | **Inteligencia Artificial y Asistente**| ⏳ Próximo Paso | Asistente conversacional empático de acompañamiento con barreras de seguridad clínica estricta. | ⏳ Contexto preparado |
 | **10**| **Seguridad y Accesibilidad** | 🟢 Transversal | Modo de alto contraste, llamada SOS directa, integración de agenda y cumplimiento estricto de Habeas Data. | 🟢 Verificado en Core |
@@ -84,7 +84,7 @@ Siguiendo los estándares internacionales de accesibilidad **WCAG AAA** para usu
   [ Hito 1 ] ───▶ [ Hito 2 & 6 ] ───▶ [ Hito 3 ] ───▶ [ Hito 4 ] ───▶ [ Hito 5 ] ───▶ [ Hito 7 ] ───▶ [ Hito 8 ]
   Usuarios & Roles Medicamentos &     Tratamientos &  Gimnasio Mental Recordatorios &  Historial &      Estadísticas &
   Vinculación ECB  Botiquín Virtual   Carné Vital PDF Podio Familiar  Alarmas Nativas  Hábitos          Reportes
-  (27/27 Tests)    (36/36 Tests)      (54/54 Tests)   (76/76 Tests)   (91/91 Tests)    (107/107 Tests)  (Próximo)
+  (27/27 Tests)    (36/36 Tests)      (54/54 Tests)   (76/76 Tests)   (91/91 Tests)    (113/113 Tests)  (Próximo)
 ```
 
 ### 🏆 Hito 1: Gestión de Usuarios, Roles y Vinculación Familiar (Módulo 1)
@@ -141,7 +141,7 @@ Siguiendo los estándares internacionales de accesibilidad **WCAG AAA** para usu
   - **Supervisión Afectuosa por WhatsApp:** Botón directo en la aplicación del cuidador para redactar y enviar un mensaje amoroso de recordatorio.
 
 ### 🗓️ Hito 7: Historial de Tomas, Adherencia y Hábitos de Bienestar (Módulo 7)
-* **Fecha:** Octubre 2026 | **Estado:** 🟢 Concluido y Certificado (107/107 pruebas: 42 Flask + 65 Flutter).
+* **Fecha:** Octubre 2026 | **Estado:** 🟢 Concluido y Certificado (113/113 pruebas: 42 Flask + 71 Flutter).
 * **Entregables:**
   - **Entidad y Persistencia Inmutable `HistorialToma`:** Modelo SQLAlchemy y tabla en base de datos para almacenar el registro histórico inmutable de cada toma (fecha, hora programada, hora real de confirmación, estado tomada/pospuesta/omitida y notas médicas) superando el booleano simple previo (`/api/historial`).
   - **Carrusel Horizontal de Fechas Táctil:** Navegación por 28 días retrospectivos con botones de altura $\ge 70$dp, accesos directos `[ ⭐ Hoy ]` y `[ ⏪ Ayer ]`, semáforo de punto por día y selector de calendario modal en español (hasta 180 días atrás).
@@ -149,6 +149,10 @@ Siguiendo los estándares internacionales de accesibilidad **WCAG AAA** para usu
   - **Tarjetas Cronológicas de Tomas (`TarjetaTomaHistorial`):** Comparación de hora programada vs hora real, badge de estado, dosis, presentación y notas explicativas.
   - **Metas de Hábitos Diarios (`SeccionHabitosDia`):** Barras de progreso de Hidratación / Agua 💧, Caminata y Movimiento 🚶, y Gimnasio Mental 🧠.
   - **Supervisión Familiar a Distancia:** Consulta de historial y adherencia en tiempo real para cuidadores vinculados mediante `pacienteId`.
+  - **Refactor Visual Integral del Inicio (`HomeScreen`):** Selector superior segmentado accesible (`[ ☀️ Mi Día y Salud ]` $\longleftrightarrow$ `[ 🌿 Hábitos Vitales ]`), separando con pulcritud la rutina médica inmediata del centro de vitalidad diaria sin sobrecargar la barra inferior de navegación.
+  - **Centro Interactivo de 8 Hábitos de Bienestar (`HabitoInteractivoCard`):** Tarjetas lúdicas adaptativas de 1 solo toque para los 8 pilares gerontológicos (Agua con 8 vasitos táctiles, Caminata con incrementos `+10`/`+15`/`+30 min`, Sol y Vitamina D, Pausas activas y estiramientos, Sueño reparador con caritas, Nutrición balanceada con chips de frutas/verduras, Conexión familiar y Gimnasio mental).
+  - **Catálogo Asistido de Metas (`AddMetaDialog`):** Diálogo accesible con presets de los 8 pilares y controles asistidos `[-]` y `[+]` de cantidad para evitar digitación innecesaria.
+  - **Verificación de Cero Desbordamientos:** Certificación de 0 errores `RenderFlex overflowed` en pantalla de 360×700 dp con factor de escala de texto de 120%.
 
 ---
 
@@ -161,9 +165,9 @@ El proyecto mantiene un estándar de pruebas automatizadas exhaustivo ejecutado 
 |                     ESTADO ACTUAL DE LA SUITE DE PRUEBAS                    |
 +─────────────────────────────────────────────────────────────────────────────+
 |  🐍 Backend Flask (Pytest):   42 / 42 pruebas pasando al 100%  (0 fallos)   |
-|  🐦 Frontend Flutter (Test):  65 / 65 pruebas pasando al 100%  (0 fallos)   |
+|  🐦 Frontend Flutter (Test):  71 / 71 pruebas pasando al 100%  (0 fallos)   |
 +─────────────────────────────────────────────────────────────────────────────+
-|  🟢 TOTAL GLOBAL CERTIFICADO: 107 / 107 pruebas pasando exitosamente (100%) |
+|  🟢 TOTAL GLOBAL CERTIFICADO: 113 / 113 pruebas pasando exitosamente (100%) |
 |  📐 DESBORDAMIENTOS (RenderFlex Overflow): CERO (0) en viewport 360×700 dp  |
 +─────────────────────────────────────────────────────────────────────────────+
 ```
