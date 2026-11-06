@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_typography.dart';
 import '../../data/models/tratamiento_model.dart';
+import '../../data/models/medicamento_model.dart';
+import '../../data/repositories/medicamento_repository.dart';
 import '../providers/medicamentos_provider.dart';
 
 class AddTratamientoDialog extends ConsumerStatefulWidget {
@@ -25,6 +27,11 @@ class _AddTratamientoDialogState extends ConsumerState<AddTratamientoDialog> {
   late final TextEditingController _proximaCitaController;
   late final TextEditingController _instruccionesController;
   late final TextEditingController _duracionDiasController;
+
+  late final TextEditingController _nuevoMedNombreController;
+  late final TextEditingController _nuevoMedDosisController;
+  bool _mostrarFormNuevoMed = false;
+  bool _guardandoNuevoMed = false;
 
   late bool _esCronico;
   final Set<int> _selectedMedIds = {};
@@ -81,12 +88,14 @@ class _AddTratamientoDialogState extends ConsumerState<AddTratamientoDialog> {
     _proximaCitaController = TextEditingController(text: t?.proximaCita ?? '');
     _instruccionesController = TextEditingController(text: t?.instrucciones ?? '');
     _duracionDiasController = TextEditingController(text: (t?.diasTotales != null && t!.diasTotales! > 0) ? t.diasTotales.toString() : '14');
+    _nuevoMedNombreController = TextEditingController();
+    _nuevoMedDosisController = TextEditingController();
 
     _esCronico = t?.esCronico ?? false;
     if (t != null && t.medicamentos.isNotEmpty) {
       for (final m in t.medicamentos) {
         final id = int.tryParse(m.id.toString());
-        if (id != null) _selectedMedIds.add(id);
+        if (id != null && id > 0) _selectedMedIds.add(id);
       }
     }
   }
@@ -102,6 +111,8 @@ class _AddTratamientoDialogState extends ConsumerState<AddTratamientoDialog> {
     _proximaCitaController.dispose();
     _instruccionesController.dispose();
     _duracionDiasController.dispose();
+    _nuevoMedNombreController.dispose();
+    _nuevoMedDosisController.dispose();
     super.dispose();
   }
 
@@ -133,6 +144,75 @@ class _AddTratamientoDialogState extends ConsumerState<AddTratamientoDialog> {
     }
   }
 
+  Future<void> _crearYVincularMedicamento() async {
+    final nombre = _nuevoMedNombreController.text.trim();
+    if (nombre.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor escribe el nombre del medicamento'),
+          backgroundColor: AppColors.emergencyRed,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _guardandoNuevoMed = true);
+    try {
+      final rawDosis = _nuevoMedDosisController.text.trim();
+      String? miligramos;
+      if (rawDosis.isNotEmpty) {
+        final cleaned = rawDosis.replaceAll(RegExp(r'(mg\s*)+', caseSensitive: false), 'mg').trim();
+        miligramos = RegExp(r'^\d+(\.\d+)?$').hasMatch(cleaned) ? '$cleaned mg' : cleaned;
+      }
+
+      final nuevoMed = await ref.read(medicamentoRepositoryProvider).createMedicamento({
+        'nombre': nombre,
+        'miligramos': miligramos,
+        'frecuencia': 24,
+        'cantidad_restante': 30,
+        'umbral_alerta': 5,
+        'icono': '💊',
+      });
+
+      ref.invalidate(medicamentosNotifierProvider);
+
+      final newId = int.tryParse(nuevoMed.id.toString());
+      if (newId != null && newId > 0) {
+        _selectedMedIds.add(newId);
+      }
+
+      _nuevoMedNombreController.clear();
+      _nuevoMedDosisController.clear();
+
+      setState(() {
+        _mostrarFormNuevoMed = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('✅ Medicamento "$nombre" creado y seleccionado'),
+            backgroundColor: AppColors.healthGreen,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al crear medicamento: $e'),
+            backgroundColor: AppColors.emergencyRed,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _guardandoNuevoMed = false);
+    }
+  }
+
   void _guardar() {
     if (_formKey.currentState!.validate()) {
       final now = DateTime.now();
@@ -161,7 +241,7 @@ class _AddTratamientoDialogState extends ConsumerState<AddTratamientoDialog> {
         'es_cronico': _esCronico,
         'fecha_inicio': fechaInicioStr,
         'fecha_fin': fechaFinStr,
-        'medicamento_ids': _selectedMedIds.toList(),
+        'medicamento_ids': _selectedMedIds.where((id) => id > 0).toList(),
       });
     }
   }
@@ -431,17 +511,152 @@ class _AddTratamientoDialogState extends ConsumerState<AddTratamientoDialog> {
                 ),
                 const SizedBox(height: 16),
 
-                // ── Vincular Medicamentos Existentes (Chips táctiles de 48dp) ──
-                if (medicamentos.isNotEmpty) ...[
-                  const Text(
-                    'Selecciona los medicamentos asociados a este tratamiento:',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                // ── Vincular o Crear Medicamentos ──
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Medicamentos asociados:',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _mostrarFormNuevoMed = !_mostrarFormNuevoMed;
+                        });
+                      },
+                      icon: Icon(
+                        _mostrarFormNuevoMed ? Icons.close_rounded : Icons.add_circle_outline_rounded,
+                        color: AppColors.primaryTeal,
+                        size: 20,
+                      ),
+                      label: Text(
+                        _mostrarFormNuevoMed ? 'Cerrar' : '+ Escribir nuevo',
+                        style: const TextStyle(
+                          fontFamily: 'Nunito',
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14,
+                          color: AppColors.primaryTeal,
+                        ),
+                      ),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+
+                // Formulario rápido para crear y asociar un nuevo medicamento
+                if (_mostrarFormNuevoMed)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 14),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF0FDF4),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.primaryTeal.withValues(alpha: 0.35)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Text(
+                          'Escribe los datos del medicamento para asociarlo:',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primaryTeal,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        TextFormField(
+                          controller: _nuevoMedNombreController,
+                          decoration: const InputDecoration(
+                            labelText: 'Nombre del medicamento',
+                            hintText: 'Ej: Amlodipino',
+                            prefixIcon: Icon(Icons.medication_rounded, color: AppColors.primaryTeal, size: 22),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                            filled: true,
+                            fillColor: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        TextFormField(
+                          controller: _nuevoMedDosisController,
+                          decoration: const InputDecoration(
+                            labelText: 'Dosis o Gramaje (opcional)',
+                            hintText: 'Ej: 5 mg',
+                            prefixIcon: Icon(Icons.scale_rounded, color: AppColors.primaryTeal, size: 22),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                            filled: true,
+                            fillColor: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            TextButton(
+                              onPressed: _guardandoNuevoMed
+                                  ? null
+                                  : () => setState(() => _mostrarFormNuevoMed = false),
+                              child: const Text('Cancelar', style: TextStyle(color: AppColors.textSecondary)),
+                            ),
+                            const SizedBox(width: 8),
+                            ElevatedButton.icon(
+                              onPressed: _guardandoNuevoMed ? null : _crearYVincularMedicamento,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryTeal,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              icon: _guardandoNuevoMed
+                                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                  : const Icon(Icons.check_rounded, size: 18),
+                              label: const Text(
+                                'Guardar y Asociar',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 8),
+
+                // Lista de chips de medicamentos existentes o mensaje de vacío
+                if (medicamentos.isEmpty && !_mostrarFormNuevoMed)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.info_outline_rounded, color: AppColors.textSecondary, size: 22),
+                        const SizedBox(width: 10),
+                        const Expanded(
+                          child: Text(
+                            'No tienes medicamentos registrados. Pulsa "+ Escribir nuevo" para agregar el primero a este tratamiento.',
+                            style: TextStyle(fontSize: 14, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else if (medicamentos.isNotEmpty) ...[
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
@@ -451,7 +666,7 @@ class _AddTratamientoDialogState extends ConsumerState<AddTratamientoDialog> {
                       return FilterChip(
                         selected: isSelected,
                         label: Text(
-                          '${m.nombre} (${m.miligramos ?? ""}mg)',
+                          m.nombreConDosis,
                           style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                         ),
                         selectedColor: AppColors.primaryLight,

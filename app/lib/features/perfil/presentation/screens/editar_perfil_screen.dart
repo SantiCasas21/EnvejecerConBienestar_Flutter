@@ -1125,11 +1125,12 @@ class _EditarPerfilScreenState extends ConsumerState<EditarPerfilScreen> {
 
                             return Column(
                               children: trats.map((trat) {
+                                final idNum = int.tryParse(trat.id.toString()) ?? 0;
                                 return TratamientoCard(
                                   tratamiento: trat,
                                   onToggleEstado: () async {
                                     final nuevo = trat.esCompletado ? 'activo' : 'completado';
-                                    await ref.read(tratamientosNotifierProvider.notifier).cambiarEstado(trat.id, nuevo);
+                                    await ref.read(tratamientosNotifierProvider.notifier).cambiarEstado(idNum, nuevo);
                                   },
                                   onEdit: () async {
                                     final result = await showDialog<Map<String, dynamic>>(
@@ -1138,7 +1139,7 @@ class _EditarPerfilScreenState extends ConsumerState<EditarPerfilScreen> {
                                     );
                                     if (result != null) {
                                       try {
-                                        await ref.read(tratamientosNotifierProvider.notifier).updateTratamiento(trat.id, result);
+                                        await ref.read(tratamientosNotifierProvider.notifier).updateTratamiento(idNum, result);
                                         if (context.mounted) {
                                           ScaffoldMessenger.of(context).showSnackBar(
                                             SnackBar(
@@ -1180,7 +1181,7 @@ class _EditarPerfilScreenState extends ConsumerState<EditarPerfilScreen> {
                                       ),
                                     );
                                     if (confirm == true) {
-                                      await ref.read(tratamientosNotifierProvider.notifier).deleteTratamiento(trat.id);
+                                      await ref.read(tratamientosNotifierProvider.notifier).deleteTratamiento(idNum);
                                     }
                                   },
                                 );

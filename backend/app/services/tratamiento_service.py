@@ -47,6 +47,7 @@ class TratamientoService:
                     med.tratamiento_id = tratamiento.id
                     
         db.session.commit()
+        db.session.refresh(tratamiento)
         return tratamiento
 
     @staticmethod
@@ -79,6 +80,7 @@ class TratamientoService:
                     med.tratamiento_id = tratamiento.id
                     
         db.session.commit()
+        db.session.refresh(tratamiento)
         return tratamiento
 
     @staticmethod

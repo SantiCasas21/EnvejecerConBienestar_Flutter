@@ -62,6 +62,12 @@ class HistorialTomasNotifier
   }
 }
 
+/// Enum para el periodo de visualización de estadísticas
+enum PeriodoEstadisticas { semanal, mensual }
+
+final periodoEstadisticasProvider =
+    StateProvider<PeriodoEstadisticas>((ref) => PeriodoEstadisticas.semanal);
+
 /// Notifier para el resumen y métricas de adherencia
 class ResumenAdherenciaNotifier
     extends StateNotifier<AsyncValue<ResumenAdherenciaModel?>> {
@@ -69,12 +75,13 @@ class ResumenAdherenciaNotifier
 
   ResumenAdherenciaNotifier(this._repository)
       : super(const AsyncValue.loading()) {
-    cargarResumen();
+    cargarResumen(dias: 30);
   }
 
   Future<void> cargarResumen({
     DateTime? desde,
     DateTime? hasta,
+    int? dias,
     int? pacienteId,
   }) async {
     state = const AsyncValue.loading();
@@ -82,6 +89,7 @@ class ResumenAdherenciaNotifier
       final resumen = await _repository.getResumenAdherencia(
         desde: desde,
         hasta: hasta,
+        dias: dias,
         pacienteId: pacienteId,
       );
       state = AsyncValue.data(resumen);

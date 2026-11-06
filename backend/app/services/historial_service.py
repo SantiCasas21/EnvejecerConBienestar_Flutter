@@ -6,6 +6,7 @@ from app.extensions import db
 from app.models.historial_toma import HistorialToma
 from app.models.medicamento import Medicamento
 from app.models.habito import Habito
+from app.models.meta import Meta
 from app.models.cuidador_paciente import CuidadorPaciente
 
 class HistorialService:
@@ -149,6 +150,7 @@ class HistorialService:
         usuario_id: int,
         fecha_inicio: Optional[date] = None,
         fecha_fin: Optional[date] = None,
+        dias: Optional[int] = None,
         paciente_id: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
@@ -157,8 +159,12 @@ class HistorialService:
         target_uid = HistorialService._verificar_acceso(usuario_id, paciente_id)
 
         hoy = date.today()
-        f_fin = fecha_fin or hoy
-        f_inicio = fecha_inicio or (f_fin - timedelta(days=6))
+        if dias and dias > 0:
+            f_fin = fecha_fin or hoy
+            f_inicio = f_fin - timedelta(days=dias - 1)
+        else:
+            f_fin = fecha_fin or hoy
+            f_inicio = fecha_inicio or (f_fin - timedelta(days=6))
 
         # Medicamentos activos del usuario
         medicamentos = Medicamento.query.filter_by(usuario_id=target_uid).all()
@@ -224,6 +230,43 @@ class HistorialService:
                 "nivel_stock": getattr(med, 'nivel_stock', 'alerta' if getattr(med, 'alerta_inventario', False) else 'normal'),
             })
 
+        # Desglose de hábitos en el periodo
+        habitos_query = Habito.query.filter(
+            Habito.usuario_id == target_uid,
+            Habito.fecha >= f_inicio,
+            Habito.fecha <= f_fin
+        ).all()
+
+        metas_activas = Meta.query.filter_by(usuario_id=target_uid).all()
+        habitos_resumen = []
+
+        if habitos_query:
+            tipos = sorted(list({h.tipo for h in habitos_query}))
+            for t in tipos:
+                h_del_tipo = [h for h in habitos_query if h.tipo == t]
+                cumplidos = sum(1 for h in h_del_tipo if h.progreso_actual >= h.meta and h.meta > 0)
+                tot = len(h_del_tipo)
+                pct = round((cumplidos / tot) * 100, 1) if tot > 0 else 0.0
+                habitos_resumen.append({
+                    "nombre": t.capitalize(),
+                    "icono": "💧" if "agua" in t.lower() else ("🚶" if "cam" in t.lower() else ("🧘" if "estir" in t.lower() else "🌿")),
+                    "cumplidos": cumplidos,
+                    "total_dias": tot,
+                    "porcentaje": pct,
+                })
+        elif metas_activas:
+            for m in metas_activas:
+                pct = round(m.porcentaje, 1)
+                habitos_resumen.append({
+                    "nombre": m.nombre,
+                    "icono": m.icono,
+                    "cumplidos": 1 if m.completada else 0,
+                    "total_dias": 1,
+                    "porcentaje": pct,
+                })
+
+        racha_data = HistorialService.calcular_racha(usuario_id=usuario_id, paciente_id=paciente_id)
+
         return {
             "usuario_id": target_uid,
             "fecha_inicio": f_inicio.isoformat(),
@@ -235,6 +278,8 @@ class HistorialService:
             "porcentaje_adherencia_global": porcentaje_global,
             "cumplimiento_diario": cumplimiento_diario,
             "medicamentos_adherencia": medicamentos_adherencia,
+            "resumen_habitos": habitos_resumen,
+            "racha": racha_data,
         }
 
     @staticmethod
@@ -274,3 +319,97 @@ class HistorialService:
             })
 
         return resultado
+
+    @staticmethod
+    def calcular_racha(usuario_id: int, paciente_id: Optional[int] = None) -> Dict[str, Any]:
+        """
+        Calcula la racha actual de días consecutivos con actividades de salud cumplidas
+        (al menos una toma tomada o al menos un hábito cumplido/progresado).
+        """
+        target_uid = HistorialService._verificar_acceso(usuario_id, paciente_id)
+        hoy = date.today()
+
+        # Fechas de tomas tomadas
+        fechas_tomas = {
+            t.fecha for t in HistorialToma.query.filter_by(
+                usuario_id=target_uid,
+                estado='tomada'
+            ).all()
+        }
+
+        # Fechas con hábitos con progreso
+        fechas_habitos = {
+            h.fecha for h in Habito.query.filter(
+                Habito.usuario_id == target_uid,
+                Habito.progreso_actual > 0
+            ).all()
+        }
+
+        fechas_activas = fechas_tomas.union(fechas_habitos)
+
+        # Evaluar racha actual continua
+        racha_actual = 0
+        dia_evaluar = None
+        if hoy in fechas_activas:
+            dia_evaluar = hoy
+        else:
+            ayer = hoy - timedelta(days=1)
+            if ayer in fechas_activas:
+                dia_evaluar = ayer
+
+        if dia_evaluar:
+            temp = dia_evaluar
+            while temp in fechas_activas:
+                racha_actual += 1
+                temp -= timedelta(days=1)
+
+        # Mejor racha histórica
+        fechas_ordenadas = sorted(list(fechas_activas))
+        racha_mejor = 0
+        racha_temp = 0
+        prev_fecha = None
+        for f in fechas_ordenadas:
+            if prev_fecha is None or f == prev_fecha + timedelta(days=1):
+                racha_temp += 1
+            elif f > prev_fecha + timedelta(days=1):
+                racha_temp = 1
+            prev_fecha = f
+            if racha_temp > racha_mejor:
+                racha_mejor = racha_temp
+        racha_mejor = max(racha_actual, racha_mejor)
+
+        # Mensaje dinámico de motivación
+        if racha_actual == 0:
+            mensaje = "¡Enciende hoy tu llama de salud! Cumple tus tomas o un hábito para iniciar tu racha 🔥"
+        elif racha_actual == 1:
+            mensaje = "¡Llama encendida! Hoy diste el primer gran paso hacia tu mejor versión 🌟"
+        elif racha_actual <= 3:
+            mensaje = f"🔥 ¡{racha_actual} días seguidos de pura vitalidad! Tu constancia inspira."
+        elif racha_actual <= 6:
+            mensaje = f"🔥 ¡Racha de fuego! {racha_actual} días cuidando de ti sin descanso."
+        elif racha_actual <= 13:
+            mensaje = f"👑 ¡Una semana entera imparable! Tus hábitos construyen salud y alegría."
+        else:
+            mensaje = f"⚡ ¡Leyenda de bienestar! {racha_actual} días consecutivos. ¡Eres un ejemplo familiar!"
+
+        # Días de la semana actual
+        lunes = hoy - timedelta(days=hoy.weekday())
+        dias_semana = []
+        nombres_dias = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
+        for i in range(7):
+            f = lunes + timedelta(days=i)
+            dias_semana.append({
+                "letra": nombres_dias[i],
+                "fecha": f.isoformat(),
+                "activo": f in fechas_activas,
+                "es_hoy": f == hoy,
+            })
+
+        return {
+            "usuario_id": target_uid,
+            "racha_actual": racha_actual,
+            "racha_mejor": racha_mejor,
+            "mensaje_racha": mensaje,
+            "dias_semana": dias_semana,
+            "hoy_completado": hoy in fechas_activas,
+        }

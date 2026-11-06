@@ -987,27 +987,59 @@ class _CuidadorDashboardScreenState
               ),
             ),
             const SizedBox(height: 8),
-            // Botón Historial de Tomas del Paciente
-            SizedBox(
-              width: double.infinity,
-              height: 46,
-              child: OutlinedButton.icon(
-                onPressed: () => context.push('/historial?paciente_id=${p.id}'),
-                icon: const Icon(Icons.history_rounded, size: 20, color: AppColors.primaryTeal),
-                label: const Text(
-                  '📅 Ver Historial de Tomas del Paciente',
-                  style: TextStyle(
-                    fontFamily: 'Nunito',
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primaryTeal,
+            // Botones de Historial y Gráficas del Paciente
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 46,
+                    child: OutlinedButton.icon(
+                      onPressed: () => context.push('/historial?paciente_id=${p.id}&tab=0'),
+                      icon: const Icon(Icons.history_rounded, size: 18, color: AppColors.primaryTeal),
+                      label: const Text(
+                        '📅 Historial',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'Nunito',
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primaryTeal,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: AppColors.primaryTeal.withValues(alpha: 0.6)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                    ),
                   ),
                 ),
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: AppColors.primaryTeal.withValues(alpha: 0.6)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: SizedBox(
+                    height: 46,
+                    child: ElevatedButton.icon(
+                      onPressed: () => context.push('/historial?paciente_id=${p.id}&tab=1'),
+                      icon: const Icon(Icons.bar_chart_rounded, size: 18),
+                      label: const Text(
+                        '📊 Gráficas',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'Nunito',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryTeal,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
             const SizedBox(height: 10),
 

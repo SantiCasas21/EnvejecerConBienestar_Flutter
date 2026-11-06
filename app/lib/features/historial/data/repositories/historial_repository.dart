@@ -4,53 +4,121 @@ import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../models/historial_toma_model.dart';
 import '../models/resumen_adherencia_model.dart';
+import '../models/racha_model.dart';
 
 class HistorialRepository {
   final Dio _dio;
 
   // Fallback offline en memoria para resiliencia (Regla 4 ia/desarrollo.md)
-  final List<HistorialTomaModel> _fallbackTomas = [
-    HistorialTomaModel(
-      id: 1,
-      usuarioId: 1,
-      medicamentoId: 1,
-      medicamentoNombre: 'Losartán Potásico',
-      medicamentoIcono: '💊',
-      medicamentoMiligramos: '50 mg',
-      medicamentoColor: '#0D9488',
-      fecha: DateTime.now().toIso8601String().substring(0, 10),
-      horaProgramada: '08:00',
-      horaReal: DateTime.now().toIso8601String(),
-      estado: 'tomada',
-      notas: 'Tomada con agua después del desayuno',
-    ),
-    HistorialTomaModel(
-      id: 2,
-      usuarioId: 1,
-      medicamentoId: 2,
-      medicamentoNombre: 'Metformina',
-      medicamentoIcono: '💊',
-      medicamentoMiligramos: '850 mg',
-      medicamentoColor: '#2563EB',
-      fecha: DateTime.now().toIso8601String().substring(0, 10),
-      horaProgramada: '07:30',
-      horaReal: DateTime.now().toIso8601String(),
-      estado: 'tomada',
-    ),
-    HistorialTomaModel(
-      id: 3,
-      usuarioId: 1,
-      medicamentoId: 3,
-      medicamentoNombre: 'Acetaminofén',
-      medicamentoIcono: '💊',
-      medicamentoMiligramos: '500 mg',
-      medicamentoColor: '#F59E0B',
-      fecha: DateTime.now().subtract(const Duration(days: 1)).toIso8601String().substring(0, 10),
-      horaProgramada: '14:00',
-      horaReal: DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
-      estado: 'tomada',
-    ),
-  ];
+  static List<HistorialTomaModel> _generarFallbackTomas() {
+    final list = <HistorialTomaModel>[];
+    final hoy = DateTime.now();
+    int idCounter = 1;
+
+    final meds = [
+      {
+        'id': 1,
+        'nombre': 'Losartán Potásico',
+        'icono': '💊',
+        'miligramos': '50 mg',
+        'color': '#0D9488',
+        'horas': ['08:00'],
+      },
+      {
+        'id': 2,
+        'nombre': 'Metformina',
+        'icono': '💊',
+        'miligramos': '850 mg',
+        'color': '#2563EB',
+        'horas': ['08:30', '20:30'],
+      },
+      {
+        'id': 3,
+        'nombre': 'Acetaminofén',
+        'icono': '💊',
+        'miligramos': '500 mg',
+        'color': '#F59E0B',
+        'horas': ['08:00', '14:00', '20:00'],
+      },
+      {
+        'id': 4,
+        'nombre': 'Atorvastatina',
+        'icono': '💊',
+        'miligramos': '20 mg',
+        'color': '#6366F1',
+        'horas': ['21:00'],
+      },
+    ];
+
+    final notasComunes = [
+      'Tomada con agua después del desayuno',
+      'Tomada con el almuerzo',
+      'Tomada con la cena',
+      'Tomada puntual según alarma',
+      'Sin molestias digestivas',
+    ];
+
+    for (int i = 0; i <= 60; i++) {
+      final dia = hoy.subtract(Duration(days: i));
+      final y = dia.year.toString().padLeft(4, '0');
+      final m = dia.month.toString().padLeft(2, '0');
+      final d = dia.day.toString().padLeft(2, '0');
+      final fechaIso = '$y-$m-$d';
+      final esHoy = (i == 0);
+
+      for (var med in meds) {
+        final medId = med['id'] as int;
+        final medNombre = med['nombre'] as String;
+        final medIcono = med['icono'] as String;
+        final medMg = med['miligramos'] as String;
+        final medColor = med['color'] as String;
+        final horas = med['horas'] as List<String>;
+
+        for (var hora in horas) {
+          String estado = 'tomada';
+          String? nota = notasComunes[(i + medId) % notasComunes.length];
+
+          if (esHoy) {
+            estado = 'tomada';
+            nota = 'Tomada con puntualidad hoy';
+          } else {
+            // Cumplimiento determinista > 90%
+            final seed = (i * 17 + medId * 31 + hora.hashCode) % 100;
+            if (seed < 88) {
+              estado = 'tomada';
+            } else if (seed < 95) {
+              estado = 'pospuesta';
+              nota = 'Pospuesta 1 hora por actividad fuera de casa';
+            } else {
+              estado = 'omitida';
+              nota = 'Omitida por indicación médica puntual';
+            }
+          }
+
+          list.add(HistorialTomaModel(
+            id: idCounter++,
+            usuarioId: 3,
+            medicamentoId: medId,
+            medicamentoNombre: medNombre,
+            medicamentoIcono: medIcono,
+            medicamentoMiligramos: medMg,
+            medicamentoColor: medColor,
+            fecha: fechaIso,
+            horaProgramada: hora,
+            horaReal: estado == 'tomada'
+                ? '$fechaIso ${hora}:12'
+                : (estado == 'pospuesta' ? '$fechaIso 18:00:00' : null),
+            estado: estado,
+            notas: nota,
+            createdAt: '$fechaIso 00:00:00',
+          ));
+        }
+      }
+    }
+    return list;
+  }
+
+  late final List<HistorialTomaModel> _fallbackTomas = _generarFallbackTomas();
 
   HistorialRepository(this._dio);
 
@@ -156,16 +224,18 @@ class HistorialRepository {
     }
   }
 
-  /// Obtiene el resumen de adherencia para el rango indicado
+  /// Obtiene el resumen de adherencia para el rango indicado o por cantidad de días (7 o 30)
   Future<ResumenAdherenciaModel> getResumenAdherencia({
     DateTime? desde,
     DateTime? hasta,
+    int? dias,
     int? pacienteId,
   }) async {
     try {
       final queryParams = <String, dynamic>{};
       if (desde != null) queryParams['desde'] = _formatDate(desde);
       if (hasta != null) queryParams['hasta'] = _formatDate(hasta);
+      if (dias != null) queryParams['dias'] = dias;
       if (pacienteId != null) queryParams['paciente_id'] = pacienteId;
 
       final response = await _dio.get(
@@ -177,29 +247,30 @@ class HistorialRepository {
         return ResumenAdherenciaModel.fromJson(
             Map<String, dynamic>.from(response.data as Map));
       }
-      return _generarFallbackResumen(desde, hasta);
+      return _generarFallbackResumen(desde, hasta, dias: dias);
     } on DioException catch (_) {
-      return _generarFallbackResumen(desde, hasta);
+      return _generarFallbackResumen(desde, hasta, dias: dias);
     } catch (_) {
-      return _generarFallbackResumen(desde, hasta);
+      return _generarFallbackResumen(desde, hasta, dias: dias);
     }
   }
 
-  ResumenAdherenciaModel _generarFallbackResumen(DateTime? desde, DateTime? hasta) {
+  ResumenAdherenciaModel _generarFallbackResumen(DateTime? desde, DateTime? hasta, {int? dias}) {
     final hoy = DateTime.now();
     final fFin = hasta ?? hoy;
-    final fInicio = desde ?? fFin.subtract(const Duration(days: 6));
+    final int cantDias = dias ?? (desde != null ? fFin.difference(desde).inDays + 1 : 7);
+    final fInicio = desde ?? fFin.subtract(Duration(days: cantDias > 0 ? cantDias - 1 : 6));
 
-    final dias = <CumplimientoDiarioModel>[];
+    final listaCumplimiento = <CumplimientoDiarioModel>[];
     var cur = fInicio;
     while (!cur.isAfter(fFin)) {
       final dateStr = _formatDate(cur);
       final tomasDelDia = _fallbackTomas.where((t) => t.fecha == dateStr).toList();
       final tomadas = tomasDelDia.where((t) => t.estado == 'tomada').length;
-      final esperadas = tomasDelDia.isEmpty ? 3 : tomasDelDia.length;
+      final esperadas = tomasDelDia.isEmpty ? 7 : tomasDelDia.length;
       final pct = esperadas > 0 ? (tomadas / esperadas) * 100 : 0.0;
 
-      dias.add(CumplimientoDiarioModel(
+      listaCumplimiento.add(CumplimientoDiarioModel(
         fecha: dateStr,
         diaSemana: _getNombreDia(cur.weekday),
         esperadas: esperadas,
@@ -211,10 +282,10 @@ class HistorialRepository {
       cur = cur.add(const Duration(days: 1));
     }
 
-    final totalEsperadas = dias.fold(0, (sum, d) => sum + d.esperadas);
-    final totalTomadas = dias.fold(0, (sum, d) => sum + d.tomadas);
-    final totalPospuestas = dias.fold(0, (sum, d) => sum + d.pospuestas);
-    final totalOmitidas = dias.fold(0, (sum, d) => sum + d.omitidas);
+    final totalEsperadas = listaCumplimiento.fold(0, (sum, d) => sum + d.esperadas);
+    final totalTomadas = listaCumplimiento.fold(0, (sum, d) => sum + d.tomadas);
+    final totalPospuestas = listaCumplimiento.fold(0, (sum, d) => sum + d.pospuestas);
+    final totalOmitidas = listaCumplimiento.fold(0, (sum, d) => sum + d.omitidas);
     final pctGlobal = totalEsperadas > 0
         ? double.parse(((totalTomadas / totalEsperadas) * 100).toStringAsFixed(1))
         : 85.0;
@@ -228,7 +299,7 @@ class HistorialRepository {
       totalPospuestas: totalPospuestas,
       totalOmitidas: totalOmitidas > 0 ? totalOmitidas : 3,
       porcentajeAdherenciaGlobal: pctGlobal,
-      cumplimientoDiario: dias,
+      cumplimientoDiario: listaCumplimiento,
       medicamentosAdherencia: const [
         MedicamentoAdherenciaModel(
           medicamentoId: 1,
@@ -266,7 +337,25 @@ class HistorialRepository {
           cantidadRestante: 4,
           nivelStock: 'Bajo',
         ),
+        MedicamentoAdherenciaModel(
+          medicamentoId: 4,
+          nombre: 'Atorvastatina',
+          icono: '💊',
+          miligramos: '20 mg',
+          colorIcono: '#6366F1',
+          tomadas: 6,
+          esperadas: 7,
+          porcentaje: 85.7,
+          cantidadRestante: 20,
+          nivelStock: 'Normal',
+        ),
       ],
+      resumenHabitos: const [
+        HabitoResumenModel(nombre: 'Agua', icono: '💧', cumplidos: 6, totalDias: 7, porcentaje: 85.7),
+        HabitoResumenModel(nombre: 'Caminata', icono: '🚶', cumplidos: 5, totalDias: 7, porcentaje: 71.4),
+        HabitoResumenModel(nombre: 'Estiramientos', icono: '🧘', cumplidos: 7, totalDias: 7, porcentaje: 100.0),
+      ],
+      racha: const RachaModel(usuarioId: 1, rachaActual: 5, rachaMejor: 14, mensajeRacha: '¡Tu llama de salud brilla con fuerza! 🔥'),
     );
   }
 

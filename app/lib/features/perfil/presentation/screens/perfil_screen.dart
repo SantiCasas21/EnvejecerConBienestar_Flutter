@@ -589,6 +589,29 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: OutlinedButton.icon(
+                    onPressed: () => context.push('/historial?tab=1'),
+                    icon: const Icon(Icons.bar_chart_rounded, size: 22, color: Color(0xFF16A34A)),
+                    label: const Text(
+                      '📊 Ver Gráficas y Reporte de Adherencia',
+                      style: TextStyle(
+                        fontFamily: 'Nunito',
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF15803D),
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF0FDF4),
+                      side: const BorderSide(color: Color(0xFF86EFAC), width: 1.5),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 24),
 
                 // ── TARJETA 1: DATOS VITALES Y BIOMETRÍA ──
@@ -1073,11 +1096,12 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
 
                             return Column(
                               children: tratamientos.map((t) {
+                                final idNum = int.tryParse(t.id.toString()) ?? 0;
                                 return TratamientoCard(
                                   tratamiento: t,
                                   onToggleEstado: () async {
                                     final nuevo = t.esCompletado ? 'activo' : 'completado';
-                                    await ref.read(tratamientosNotifierProvider.notifier).cambiarEstado(t.id, nuevo);
+                                    await ref.read(tratamientosNotifierProvider.notifier).cambiarEstado(idNum, nuevo);
                                   },
                                   onEdit: () async {
                                     final result = await showDialog<Map<String, dynamic>>(
@@ -1086,7 +1110,7 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
                                     );
                                     if (result != null) {
                                       try {
-                                        await ref.read(tratamientosNotifierProvider.notifier).updateTratamiento(t.id, result);
+                                        await ref.read(tratamientosNotifierProvider.notifier).updateTratamiento(idNum, result);
                                         if (context.mounted) {
                                           ScaffoldMessenger.of(context).showSnackBar(
                                             SnackBar(
@@ -1128,7 +1152,7 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
                                       ),
                                     );
                                     if (confirm == true) {
-                                      await ref.read(tratamientosNotifierProvider.notifier).deleteTratamiento(t.id);
+                                      await ref.read(tratamientosNotifierProvider.notifier).deleteTratamiento(idNum);
                                     }
                                   },
                                 );

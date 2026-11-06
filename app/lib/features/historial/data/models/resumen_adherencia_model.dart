@@ -1,3 +1,5 @@
+import 'racha_model.dart';
+
 class CumplimientoDiarioModel {
   final String fecha;
   final String diaSemana;
@@ -94,6 +96,40 @@ class MedicamentoAdherenciaModel {
       };
 }
 
+class HabitoResumenModel {
+  final String nombre;
+  final String icono;
+  final int cumplidos;
+  final int totalDias;
+  final double porcentaje;
+
+  const HabitoResumenModel({
+    required this.nombre,
+    this.icono = '🌿',
+    required this.cumplidos,
+    required this.totalDias,
+    required this.porcentaje,
+  });
+
+  factory HabitoResumenModel.fromJson(Map<String, dynamic> json) {
+    return HabitoResumenModel(
+      nombre: json['nombre']?.toString() ?? '',
+      icono: json['icono']?.toString() ?? '🌿',
+      cumplidos: (json['cumplidos'] as num?)?.toInt() ?? 0,
+      totalDias: (json['total_dias'] as num?)?.toInt() ?? 1,
+      porcentaje: (json['porcentaje'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'nombre': nombre,
+        'icono': icono,
+        'cumplidos': cumplidos,
+        'total_dias': totalDias,
+        'porcentaje': porcentaje,
+      };
+}
+
 class ResumenAdherenciaModel {
   final int usuarioId;
   final String fechaInicio;
@@ -105,6 +141,8 @@ class ResumenAdherenciaModel {
   final double porcentajeAdherenciaGlobal;
   final List<CumplimientoDiarioModel> cumplimientoDiario;
   final List<MedicamentoAdherenciaModel> medicamentosAdherencia;
+  final List<HabitoResumenModel> resumenHabitos;
+  final RachaModel? racha;
 
   const ResumenAdherenciaModel({
     required this.usuarioId,
@@ -117,6 +155,8 @@ class ResumenAdherenciaModel {
     required this.porcentajeAdherenciaGlobal,
     this.cumplimientoDiario = const [],
     this.medicamentosAdherencia = const [],
+    this.resumenHabitos = const [],
+    this.racha,
   });
 
   factory ResumenAdherenciaModel.fromJson(Map<String, dynamic> json) {
@@ -140,6 +180,14 @@ class ResumenAdherenciaModel {
                   Map<String, dynamic>.from(e as Map)))
               .toList() ??
           const [],
+      resumenHabitos: (json['resumen_habitos'] as List<dynamic>?)
+              ?.map((e) => HabitoResumenModel.fromJson(
+                  Map<String, dynamic>.from(e as Map)))
+              .toList() ??
+          const [],
+      racha: json['racha'] != null
+          ? RachaModel.fromJson(Map<String, dynamic>.from(json['racha'] as Map))
+          : null,
     );
   }
 
@@ -155,6 +203,8 @@ class ResumenAdherenciaModel {
         'cumplimiento_diario': cumplimientoDiario.map((e) => e.toJson()).toList(),
         'medicamentos_adherencia':
             medicamentosAdherencia.map((e) => e.toJson()).toList(),
+        'resumen_habitos': resumenHabitos.map((e) => e.toJson()).toList(),
+        'racha': racha?.toJson(),
       };
 }
 
@@ -187,6 +237,18 @@ class HabitoHistorialModel {
       fecha: json['fecha']?.toString() ?? '',
       cumplido: json['cumplido'] == true,
     );
+  }
+
+  String get nombreFormateado {
+    final tipoLower = tipo.toLowerCase();
+    if (tipoLower.contains('agua') || tipoLower.contains('hidratacion')) {
+      return 'Hidratación';
+    } else if (tipoLower.contains('camin') || tipoLower.contains('paso') || tipoLower.contains('ejercicio')) {
+      return 'Caminata y Movimiento';
+    } else if (tipoLower.contains('juego') || tipoLower.contains('mental') || tipoLower.contains('cogniti')) {
+      return 'Gimnasio Mental';
+    }
+    return tipo.isEmpty ? 'Hábito Saludable' : tipo;
   }
 
   Map<String, dynamic> toJson() => {

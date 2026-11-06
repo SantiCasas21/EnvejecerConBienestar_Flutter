@@ -153,4 +153,50 @@ class Medicamento with _$Medicamento {
     }
     return '08:00';
   }
+
+  /// Retorna la dosis o gramaje normalizado sin sufijos duplicados (ej: '50 mg', '850 mg', '10 ml')
+  String get dosisFormateada {
+    if (miligramos == null || miligramos!.trim().isEmpty) return '';
+    final raw = miligramos!.trim();
+
+    // Limpiar duplicaciones accidentales como 'mgmg', 'mg mg', etc.
+    final cleaned = raw
+        .replaceAll(RegExp(r'(mg\s*)+', caseSensitive: false), 'mg')
+        .replaceAll(RegExp(r'(ml\s*)+', caseSensitive: false), 'ml')
+        .trim();
+
+    // Si solo contiene dígitos o decimales, anexar ' mg'
+    if (RegExp(r'^\d+(\.\d+)?$').hasMatch(cleaned)) {
+      return '$cleaned mg';
+    }
+
+    // Si tiene número pegado a la unidad (ej: '50mg' -> '50 mg')
+    final match = RegExp(r'^(\d+(?:\.\d+)?)\s*([a-zA-Z]+)$').firstMatch(cleaned);
+    if (match != null) {
+      return '${match.group(1)} ${match.group(2)}';
+    }
+
+    return cleaned;
+  }
+
+  /// Retorna el nombre del medicamento integrando la dosis solo si no está ya presente en el nombre
+  String get nombreConDosis {
+    final cleanNombre = nombre.trim();
+    final dosis = dosisFormateada;
+    if (dosis.isEmpty) return cleanNombre;
+
+    final lowerNombre = cleanNombre.toLowerCase();
+    final soloNumeroDosis = dosis.replaceAll(RegExp(r'[^\d.]'), '');
+
+    // Si el nombre ya contiene el número del gramaje o la dosis completa, no duplicar
+    if (soloNumeroDosis.isNotEmpty && lowerNombre.contains(soloNumeroDosis)) {
+      return cleanNombre;
+    }
+
+    if (lowerNombre.contains(dosis.toLowerCase())) {
+      return cleanNombre;
+    }
+
+    return '$cleanNombre ($dosis)';
+  }
 }

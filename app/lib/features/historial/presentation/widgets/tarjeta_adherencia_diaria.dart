@@ -27,7 +27,14 @@ class TarjetaAdherenciaDiaria extends StatelessWidget {
     String mensajeMotivador;
     IconData iconoEstado;
 
-    if (porcentaje >= 80) {
+    final bool sinPrescripciones = totalEsperadas == 0;
+
+    if (sinPrescripciones) {
+      colorGauge = AppColors.textSecondary;
+      colorFondoGauge = const Color(0xFFF1F5F9);
+      mensajeMotivador = 'Sin prescripciones registradas para este día.';
+      iconoEstado = Icons.calendar_today_rounded;
+    } else if (porcentaje >= 80) {
       colorGauge = AppColors.successGreen;
       colorFondoGauge = const Color(0xFFDCFCE7);
       mensajeMotivador = '¡Excelente constancia! 🌟 Has cumplido tus tomas de este día.';
@@ -95,7 +102,7 @@ class TarjetaAdherenciaDiaria extends StatelessWidget {
                     width: 76,
                     height: 76,
                     child: CircularProgressIndicator(
-                      value: (porcentaje / 100).clamp(0.0, 1.0),
+                      value: sinPrescripciones ? 0.0 : (porcentaje / 100).clamp(0.0, 1.0),
                       strokeWidth: 8,
                       backgroundColor: colorFondoGauge,
                       valueColor: AlwaysStoppedAnimation<Color>(colorGauge),
@@ -103,10 +110,10 @@ class TarjetaAdherenciaDiaria extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '${porcentaje.round()}%',
+                    sinPrescripciones ? '--' : '${porcentaje.round()}%',
                     style: TextStyle(
                       fontFamily: 'Nunito',
-                      fontSize: 22,
+                      fontSize: sinPrescripciones ? 26 : 22,
                       fontWeight: FontWeight.w900,
                       color: colorGauge,
                     ),
@@ -153,30 +160,38 @@ class TarjetaAdherenciaDiaria extends StatelessWidget {
           const SizedBox(height: 12),
 
           // Fila de Badges Resumen (Tomadas, Pospuestas, Omitidas)
-          Wrap(
-            spacing: 8,
-            runSpacing: 6,
-            children: [
-              _buildBadge(
-                label: '$tomadas Tomadas',
-                icon: Icons.check_circle_rounded,
-                bgColor: const Color(0xFFDCFCE7),
-                textColor: const Color(0xFF166534),
-              ),
-              _buildBadge(
-                label: '$pospuestas Pospuestas',
-                icon: Icons.snooze_rounded,
-                bgColor: const Color(0xFFFEF3C7),
-                textColor: const Color(0xFF92400E),
-              ),
-              _buildBadge(
-                label: '$omitidas Omitidas',
-                icon: Icons.remove_circle_outline_rounded,
-                bgColor: const Color(0xFFF1F5F9),
-                textColor: const Color(0xFF475569),
-              ),
-            ],
-          ),
+          if (sinPrescripciones && tomadas == 0 && pospuestas == 0 && omitidas == 0)
+            _buildBadge(
+              label: 'Sin tomas requeridas',
+              icon: Icons.check_circle_outline_rounded,
+              bgColor: const Color(0xFFF1F5F9),
+              textColor: AppColors.textSecondary,
+            )
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: [
+                _buildBadge(
+                  label: '$tomadas Tomadas',
+                  icon: Icons.check_circle_rounded,
+                  bgColor: const Color(0xFFDCFCE7),
+                  textColor: const Color(0xFF166534),
+                ),
+                _buildBadge(
+                  label: '$pospuestas Pospuestas',
+                  icon: Icons.snooze_rounded,
+                  bgColor: const Color(0xFFFEF3C7),
+                  textColor: const Color(0xFF92400E),
+                ),
+                _buildBadge(
+                  label: '$omitidas Omitidas',
+                  icon: Icons.remove_circle_outline_rounded,
+                  bgColor: const Color(0xFFF1F5F9),
+                  textColor: const Color(0xFF475569),
+                ),
+              ],
+            ),
         ],
       ),
     );

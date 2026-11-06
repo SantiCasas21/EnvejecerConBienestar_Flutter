@@ -26,9 +26,25 @@ class MetaService:
         if not meta:
             return None
         
-        meta.progreso = max(0, meta.progreso + valor)
+        meta.progreso = max(0, meta.progreso + valor)
+
         meta.completada = meta.progreso >= meta.objetivo
             
+        db.session.commit()
+        return meta
+
+    @staticmethod
+    def update(id: int, data: Dict[str, Any], usuario_id: int) -> Optional[Meta]:
+        """Actualiza los atributos de una meta existente."""
+        meta = Meta.query.filter_by(id=id, usuario_id=usuario_id).first()
+        if not meta:
+            return None
+        
+        for campo in ('nombre', 'objetivo', 'unidad', 'icono'):
+            if campo in data and data[campo] is not None:
+                setattr(meta, campo, data[campo])
+        
+        meta.completada = meta.progreso >= meta.objetivo
         db.session.commit()
         return meta
 

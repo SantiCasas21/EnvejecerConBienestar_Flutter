@@ -20,25 +20,37 @@ class TratamientosNotifier extends _$TratamientosNotifier {
     ref.invalidate(medicamentosNotifierProvider);
   }
 
-  Future<void> updateTratamiento(int id, Map<String, dynamic> data) async {
-    final updated = await ref.read(tratamientoRepositoryProvider).updateTratamiento(id, data);
+  Future<void> updateTratamiento(dynamic id, Map<String, dynamic> data) async {
+    final idNum = int.tryParse(id.toString()) ?? 0;
+    final updated = await ref.read(tratamientoRepositoryProvider).updateTratamiento(idNum, data);
     final current = state.value ?? [];
-    final updatedList = current.map((t) => t.id == id ? updated : t).toList();
+    final updatedList = current.map((t) {
+      final tId = int.tryParse(t.id.toString()) ?? 0;
+      return tId == idNum ? updated : t;
+    }).toList();
     state = AsyncValue.data(updatedList);
     ref.invalidate(medicamentosNotifierProvider);
   }
 
-  Future<void> cambiarEstado(int id, String nuevoEstado) async {
-    final updated = await ref.read(tratamientoRepositoryProvider).cambiarEstado(id, nuevoEstado);
+  Future<void> cambiarEstado(dynamic id, String nuevoEstado) async {
+    final idNum = int.tryParse(id.toString()) ?? 0;
+    final updated = await ref.read(tratamientoRepositoryProvider).cambiarEstado(idNum, nuevoEstado);
     final current = state.value ?? [];
-    final updatedList = current.map((t) => t.id == id ? updated : t).toList();
+    final updatedList = current.map((t) {
+      final tId = int.tryParse(t.id.toString()) ?? 0;
+      return tId == idNum ? updated : t;
+    }).toList();
     state = AsyncValue.data(updatedList);
   }
 
-  Future<void> deleteTratamiento(int id) async {
-    await ref.read(tratamientoRepositoryProvider).deleteTratamiento(id);
+  Future<void> deleteTratamiento(dynamic id) async {
+    final idNum = int.tryParse(id.toString()) ?? 0;
+    await ref.read(tratamientoRepositoryProvider).deleteTratamiento(idNum);
     final current = state.value ?? [];
-    state = AsyncValue.data(current.where((t) => t.id != id).toList());
+    state = AsyncValue.data(current.where((t) {
+      final tId = int.tryParse(t.id.toString()) ?? 0;
+      return tId != idNum;
+    }).toList());
     ref.invalidate(medicamentosNotifierProvider);
   }
 }

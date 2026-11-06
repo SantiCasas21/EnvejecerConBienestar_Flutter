@@ -93,6 +93,9 @@ def resumen_adherencia():
     desde = _parse_date(request.args.get('desde'))
     hasta = _parse_date(request.args.get('hasta'))
     
+    dias_raw = request.args.get('dias')
+    dias = int(dias_raw) if dias_raw and dias_raw.isdigit() else None
+
     paciente_id_raw = request.args.get('paciente_id')
     paciente_id = int(paciente_id_raw) if paciente_id_raw and paciente_id_raw.isdigit() else None
 
@@ -101,6 +104,7 @@ def resumen_adherencia():
             usuario_id=usuario_id,
             fecha_inicio=desde,
             fecha_fin=hasta,
+            dias=dias,
             paciente_id=paciente_id,
         )
         return jsonify(resumen), 200
@@ -137,3 +141,32 @@ def historial_habitos():
         return jsonify({"msg": str(pe)}), 403
     except Exception as e:
         return jsonify({"msg": f"Error al consultar historial de hábitos: {str(e)}"}), 500
+
+@bp.route('/racha', methods=['GET'])
+@jwt_required()
+def obtener_racha():
+    """Obtiene la racha actual y estadísticas de constancia."""
+    usuario_id = int(get_jwt_identity())
+    paciente_id_raw = request.args.get('paciente_id')
+    paciente_id = int(paciente_id_raw) if paciente_id_raw and paciente_id_raw.isdigit() else None
+    try:
+        racha = HistorialService.calcular_racha(usuario_id=usuario_id, paciente_id=paciente_id)
+        return jsonify(racha), 200
+    except PermissionError as pe:
+        return jsonify({"msg": str(pe)}), 403
+    except Exception as e:
+        return jsonify({"msg": f"Error al calcular racha: {str(e)}"}), 500
+
+@bp.route('/seed-demo', methods=['GET', 'POST'])
+def trigger_seed_demo():
+    """Endpoint utilitario para poblar 2 meses de datos de prueba y expediente clínico para prueba@envejecer.com."""
+    import sys, os
+    backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+    if backend_dir not in sys.path:
+        sys.path.insert(0, backend_dir)
+    from seed_dos_meses_demo import poblar_dos_meses_demo
+    from seed_expediente_clinico import poblar_expediente_clinico
+    res_tomas = poblar_dos_meses_demo()
+    res_exp = poblar_expediente_clinico()
+    return jsonify({"tomas_y_habitos": res_tomas, "expediente_clinico": res_exp}), 200
+

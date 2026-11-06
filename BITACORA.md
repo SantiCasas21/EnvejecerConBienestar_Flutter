@@ -1,8 +1,8 @@
 # 🌿 Envejecer con Bienestar — Bitácora Oficial del Proyecto
 
 > **Documento Oficial de Seguimiento, Arquitectura y Estado de Madurez**  
-> **Última actualización:** Octubre 2026 | **Versión:** 1.7.0-dev  
-> **Estado Global:** 🟢 Módulos 1 al 7 Certificados al 100% (113/113 Pruebas Pasando) | 🟡 Módulo 8 en Preparación
+> **Última actualización:** Octubre 2026 | **Versión:** 1.8.0-dev  
+> **Estado Global:** 🟢 Módulos 1 al 8 Certificados al 100% (128/128 Pruebas Pasando: 47 Flask + 81 Flutter) | 🟡 Módulo 9 en Preparación
 
 ---
 
@@ -65,13 +65,13 @@ Siguiendo los estándares internacionales de accesibilidad **WCAG AAA** para usu
 | :-: | :--- | :---: | :--- | :---: |
 | **1** | **Gestión de Usuarios y Roles** | 🟢 Completado | Roles diferenciados (Adulto Mayor vs. Cuidador), Código de Vinculación `ECB-XXXX`, Onboarding adaptativo y Dashboard de Cuidador. | 🟢 27/27 pruebas (100%) |
 | **2** | **Medicamentos y Tomas de Hoy** | 🟢 Completado | Rutina cronológica del día, confirmación en 1 toque, ficha interactiva (`MedicamentoPopupDialog`) y sugerencias rápidas. | 🟢 36/36 pruebas (100%) |
-| **3** | **Tratamientos y Carné Vital** | 🟢 Completado | Carné Vital de Salud tipo pasaporte, Triage Amable, informe médico PDF con privacidad CC y algoritmo ML de adherencia. | 🟢 54/54 pruebas (100%) |
+| **3** | **Tratamientos y Carné Vital** | 🟢 Completado | Carné Vital de Salud tipo pasaporte, Triage Amable, diálogo `AddTratamientoDialog` con selección dinámica y medicinas al vuelo, informe PDF y ML adherencia. | 🟢 63/63 pruebas (100%: 47 Flask + 16 Flutter) |
 | **4** | **Gimnasio Mental (Minijuegos)** | 🟢 Completado | 5 minijuegos cognitivos (Sudoku, Pares, Sopa, Trivia, Simón), 3 niveles, botón "Volver a Juegos" y Podio Familiar. | 🟢 76/76 pruebas (100%) |
 | **5** | **Recordatorios y Alarmas** | 🟢 Completado | Motor de alarmas nativo con timezone Bogotá, snooze 10 min, diálogo accesible (`AlarmaTomaDialog`) y aviso por WhatsApp. | 🟢 91/91 pruebas (100%) |
 | **6** | **Inventario (Botiquín Virtual)** | 🟢 Completado | Semáforo de stock (🟢/⚠️/🔴), cálculo de días de autonomía, descuento automático por toma y recarga rápida (+10/+30). | 🟢 Pruebas Unitarias y UI OK |
-| **7** | **Historial y Hábitos de Salud** | 🟢 Completado | Entidad inmutable `HistorialToma`, carrusel de fechas táctil, gauge de adherencia positiva, tomas cronológicas y hábitos de bienestar. | 🟢 113/113 pruebas (100%: 42 Flask + 71 Flutter) |
-| **8** | **Estadísticas y Reportes** | 🟡 En Preparación | Gráficas semanales/mensuales de cumplimiento y reporte exportable en texto amigable para WhatsApp. | ⏳ Parcial (vía PDF) |
-| **9** | **Inteligencia Artificial y Asistente**| ⏳ Próximo Paso | Asistente conversacional empático de acompañamiento con barreras de seguridad clínica estricta. | ⏳ Contexto preparado |
+| **7** | **Historial y Hábitos de Salud** | 🟢 Completado | Entidad inmutable `HistorialToma`, carrusel de fechas táctil, racha de bienestar ("fueguito"), cronómetro de estiramientos y 8 pilares. | 🟢 113/113 pruebas (100%: 42 Flask + 71 Flutter) |
+| **8** | **Estadísticas y Reportes** | 🟢 Completado | Gráficas semanales/mensuales, medidor donut de adherencia, KPIs de resumen, reporte de 1 toque para WhatsApp y exportación PDF. | 🟢 128/128 pruebas (100%: 47 Flask + 81 Flutter) |
+| **9** | **Inteligencia Artificial y Asistente**| 🟡 En Preparación | Asistente conversacional empático de acompañamiento con barreras de seguridad clínica estricta. | ⏳ Contexto preparado |
 | **10**| **Seguridad y Accesibilidad** | 🟢 Transversal | Modo de alto contraste, llamada SOS directa, integración de agenda y cumplimiento estricto de Habeas Data. | 🟢 Verificado en Core |
 
 ---
@@ -79,12 +79,12 @@ Siguiendo los estándares internacionales de accesibilidad **WCAG AAA** para usu
 ## 📜 3. Registro Cronológico de Versiones e Hitos
 
 ```
-                                      LÍNEA DE TIEMPO DE HITOS
+                                         LÍNEA DE TIEMPO DE HITOS
   
-  [ Hito 1 ] ───▶ [ Hito 2 & 6 ] ───▶ [ Hito 3 ] ───▶ [ Hito 4 ] ───▶ [ Hito 5 ] ───▶ [ Hito 7 ] ───▶ [ Hito 8 ]
-  Usuarios & Roles Medicamentos &     Tratamientos &  Gimnasio Mental Recordatorios &  Historial &      Estadísticas &
-  Vinculación ECB  Botiquín Virtual   Carné Vital PDF Podio Familiar  Alarmas Nativas  Hábitos          Reportes
-  (27/27 Tests)    (36/36 Tests)      (54/54 Tests)   (76/76 Tests)   (91/91 Tests)    (113/113 Tests)  (Próximo)
+  [ Hito 1 ] ───▶ [ Hito 2 & 6 ] ───▶ [ Hito 3 ] ───▶ [ Hito 4 ] ───▶ [ Hito 5 ] ───▶ [ Hito 7 ] ───▶ [ Hito 8 ] ───▶ [ Hito 9 ]
+  Usuarios & Roles Medicamentos &     Tratamientos &  Gimnasio Mental Recordatorios &  Historial &      Estadísticas &   Asistente IA
+  Vinculación ECB  Botiquín Virtual   Carné Vital PDF Podio Familiar  Alarmas Nativas  Hábitos          Reportes         (Próximo)
+  (27/27 Tests)    (36/36 Tests)      (63/63 Tests)   (76/76 Tests)   (91/91 Tests)    (113/113 Tests)  (128/128 Tests)
 ```
 
 ### 🏆 Hito 1: Gestión de Usuarios, Roles y Vinculación Familiar (Módulo 1)
@@ -107,7 +107,7 @@ Siguiendo los estándares internacionales de accesibilidad **WCAG AAA** para usu
   - Pestaña **"Mi Botiquín"** (`BotiquinInventarioTab`): control de blísteres y conteo de pastillas, cálculo automático de días de autonomía restante, semáforo preventivo de existencias y botones de recarga rápida en 1 toque (+10 y +30 pastillas / 1 caja).
 
 ### 📋 Hito 3: Tratamientos Clínicos, Carné Vital y Expediente PDF (Módulo 3)
-* **Fecha:** Septiembre 2026 | **Estado:** 🟢 Concluido y Certificado (54/54 pruebas).
+* **Fecha:** Septiembre - Octubre 2026 | **Estado:** 🟢 Concluido, Auditado y Certificado al 100% (63/63 pruebas: 47 Flask + 16 Flutter).
 * **Entregables:**
   - **Carné Vital de Salud:** Tarjeta médica tipo pasaporte (`CarneVitalCard`) con principios de *Triage Amable* (sangre, IMC explicado sin términos alarmistas, alergias conocidas, presión habitual y condición de movilidad).
   - Botón SOS de contacto prioritario ergonómico ($56$dp de altura táctil) en tono carmesí institucional.
@@ -115,6 +115,13 @@ Siguiendo los estándares internacionales de accesibilidad **WCAG AAA** para usu
   - Generador de Informe Médico Personal en PDF (`PdfReportService`) con selector de privacidad para ocultar/mostrar el documento de identidad del paciente.
   - Algoritmo de Inteligencia Artificial (`GALC-v1`) en backend para la predicción de riesgo de adherencia terapéutica según factores de polifarmacia y red de apoyo.
   - Auditoría y resolución del 100% de advertencias de overflow (0 desbordamientos RenderFlex en 360×700 dp).
+  - **Auditoría Profunda de Calidad y Refactor de Prescripción Dinámica:**
+    - **Diagnóstico y Causa Raíz de QA:** Se descubrió por qué pasaron pruebas anteriores: en backend nunca se testeaba `PUT /api/tratamientos/<id>` (solo `POST` y `GET`), y en frontend nunca se probaba el widget `AddTratamientoDialog` con interacción real de selección de medicamentos.
+    - **Sincronización de Sesión en Backend:** Integración de `db.session.refresh(tratamiento)` en `tratamiento_service.py`, erradicando la desincronización de relaciones SQLAlchemy tras actualizar medicamentos asociados. Nuevas pruebas unitarias (`test_actualizar_tratamiento_asociacion_medicamentos` y `test_actualizar_tratamiento_edge_cases`), elevando la suite Flask a 47/47 tests (100% pasando).
+    - **Normalización de Nombres y Gramajes:** Erradicación definitiva de duplicaciones grotescas de dosis ("mgmg", "50mg (50mg)") mediante los getters normalizados `dosisFormateada` y `nombreConDosis` en `MedicamentoModel`.
+    - **Cero Bloqueo y Medicamentos al Vuelo (`AddTratamientoDialog`):** Selección y deselección interactiva sin medicamentos bloqueados, y nuevo formulario en línea `+ Escribir nuevo` para prescribir fármacos al vuelo sin abandonar la creación del tratamiento.
+    - **Resiliencia en Capa de Datos:** Manejo seguro de identificadores con `int.tryParse()` y try/catch con fallback offline en `TratamientoRepository` y `TratamientosNotifier`.
+    - **Suite de Pruebas Automatizadas:** 16 de 16 tests específicos de Tratamientos en Flutter al 100% (7/7 en `test/tratamiento_dialog_test.dart` y 9/9 en `test/tratamientos_test.dart`), y validación en vivo contra PostgreSQL con `prueba@envejecer.com`.
 
 ### 🎮 Hito 4: Gimnasio Mental y Estimulación Cognitiva Familiar (Módulo 4)
 * **Fecha:** Septiembre 2026 | **Estado:** 🟢 Concluido y Certificado (76/76 pruebas).
@@ -150,9 +157,47 @@ Siguiendo los estándares internacionales de accesibilidad **WCAG AAA** para usu
   - **Metas de Hábitos Diarios (`SeccionHabitosDia`):** Barras de progreso de Hidratación / Agua 💧, Caminata y Movimiento 🚶, y Gimnasio Mental 🧠.
   - **Supervisión Familiar a Distancia:** Consulta de historial y adherencia en tiempo real para cuidadores vinculados mediante `pacienteId`.
   - **Refactor Visual Integral del Inicio (`HomeScreen`):** Selector superior segmentado accesible (`[ ☀️ Mi Día y Salud ]` $\longleftrightarrow$ `[ 🌿 Hábitos Vitales ]`), separando con pulcritud la rutina médica inmediata del centro de vitalidad diaria sin sobrecargar la barra inferior de navegación.
-  - **Centro Interactivo de 8 Hábitos de Bienestar (`HabitoInteractivoCard`):** Tarjetas lúdicas adaptativas de 1 solo toque para los 8 pilares gerontológicos (Agua con 8 vasitos táctiles, Caminata con incrementos `+10`/`+15`/`+30 min`, Sol y Vitamina D, Pausas activas y estiramientos, Sueño reparador con caritas, Nutrición balanceada con chips de frutas/verduras, Conexión familiar y Gimnasio mental).
-  - **Catálogo Asistido de Metas (`AddMetaDialog`):** Diálogo accesible con presets de los 8 pilares y controles asistidos `[-]` y `[+]` de cantidad para evitar digitación innecesaria.
+  - **Racha de Adherencia Interactiva ("Fueguito" estilo Duolingo/TikTok):** Icono animado pulsante en cabecera con gradiente fuego/dorado, diálogo motivacional `_RachaInfoDialog` con racha actual, récord histórico y visualizador semanal de constancia (`L M M J V S D`) celebrando el esfuerzo diario sin culpas.
+  - **Centro Interactivo de los 8 Pilares Geriátricos (`HabitoInteractivoCard`):** Tarjetas lúdicas adaptativas de 1 solo toque para Agua (8 vasitos táctiles), Caminata (`+10`/`+15`/`+30 min`), Sol y Vitamina D, Pausas activas y estiramientos, Sueño reparador con caritas, Nutrición balanceada con chips de frutas/verduras, Conexión familiar y Gimnasio mental.
+  - **Elogios Médicos Personalizados:** Mensajes terapéuticos de felicitación y refuerzo positivo al completar el 100% de cada uno de los 8 pilares gerontológicos.
+  - **Cronómetro Interactivo de Estiramientos con Guía Articular:** Reloj en pantalla grande de 34sp con Iniciar/Pausar, suma directa a la meta diaria (`Sumar +X min`) y guía colapsable de 4 ejercicios articulares suaves para adultos mayores (Cuello y nuca, Círculos con hombros, Movilidad de tobillos y Estrellas con manos).
+  - **Personalización Completa y Deselección Limpia (`AddMetaDialog`):** Diálogo ergonómico para crear o editar hábitos existentes (`metaAEditar`), con deselección limpia de recomendaciones al pulsar nuevamente, controles asistidos `[-]` y `[+]` de cantidad y catálogo de 16 emojis.
+  - **Eliminación Segura con Confirmación:** Flujo de borrado de hábitos con diálogo explicativo y confirmación táctil para prevenir eliminaciones accidentales por temblor de pulso.
   - **Verificación de Cero Desbordamientos:** Certificación de 0 errores `RenderFlex overflowed` en pantalla de 360×700 dp con factor de escala de texto de 120%.
+
+### 📊 Hito 8: Estadísticas, Gráficas y Reporte de Salud por WhatsApp (Módulo 8)
+* **Fecha:** Octubre 2026 | **Estado:** 🟢 Concluido y Certificado (119/119 pruebas: 45 Flask + 74 Flutter).
+* **Entregables:**
+  - **Servicio y Endpoint de Análisis Parametrizado (`/api/historial/resumen`):** Soporte de consulta flexible por días (`dias=7`, `dias=30`) o fechas, calculando adherencia global, tomas esperadas vs tomadas, resumen por medicamento individual, seguimiento de hábitos y racha de bienestar activa.
+  - **Selector de Pestañas Superior en Historial:** Integración de `[ 📅 Registro Diario ]` $\longleftrightarrow$ `[ 📊 Gráficas y Reporte ]` sin saturar el inicio ni la barra inferior de navegación.
+  - **Selector Semanal Ergonómico de 7 Días (`SelectorSemanalWidget` / `SelectorFechaCarousel`):** Sustitución del carrusel estático por una barra semanal ergonómica completa de Lunes a Domingo. Utiliza `LayoutBuilder` para distribuir simétricamente los 7 días de la semana activa, áreas de pulsación táctil amplias ($\ge 44$dp), micro-indicadores circulares (`dotColor`) de cumplimiento de tomas y hábitos, soporte para deslizamiento horizontal (*Swipe*) entre semanas y retroalimentación háptica suave (`HapticFeedback.lightImpact`).
+  - **Barra de Navegación de Semana y Rango:** Cabecera con botones chevron `[ ◀ ]` y `[ ▶ ]`, rango textual visible (ej. *"26 Oct - 1 Nov 2026"*), badge informativo *"Semana Actual"* y cálculo dinámico de la semana completa al elegir cualquier día desde el diálogo de calendario (`showDatePicker`).
+  - **Botón Persistente `[ ⭐ Ir a Hoy ]`:** Acceso directo accesible que restablece de inmediato la semana en curso y el día actual.
+  - **Medidor Circular de Adherencia (`AdherenciaDonutWidget`):** Donut accesible de alto contraste con porcentajes visibles de 26sp y mensajes motivacionales terapéuticos clasificados por color (≥90% *"¡Excelente constancia!"*, ≥80% *"¡Gran cuidado de tu salud!"*, ≥50% *"¡Buen avance diario!"*, <50% *"¡Cada día cuenta!"*).
+  - **Tarjetas KPI de Resumen Rápido:** Tres columnas visuales para tomas realizadas (💊), hábitos de vida saludable cumplidos (💧) y días de racha activa (🔥).
+  - **Gráfica de Barras Semanales (`GraficaBarrasSemanalesWidget`):** Columnas de Lunes a Domingo con porcentajes explícitos en la cabecera, colores clasificados (verde/ámbar/gris) y doble etiqueta (día y número del mes) bajo principios de *Senior Data Viz*.
+  - **Selector de Periodo (7 Días vs 30 Días):** Alternancia táctil ágil con vibración suave y recálculo instantáneo.
+  - **Reporte de 1 Toque para WhatsApp con Previsualización (`PreviewReporteDialog` y `WhatsAppReportService`):** Burbuja modal tipo chat de WhatsApp que permite leer con serenidad el reporte estructurado con emojis afectuosos antes de compartirlo, con botones para copiar al portapapeles o abrir WhatsApp automáticamente.
+  - **Búsqueda Libre en Calendario con Soporte Localizado Nativo:** Integración de `flutter_localizations` (`es_CO`, `es`) en `pubspec.yaml` y `app.dart`, permitiendo la apertura del selector modal de fecha (`showDatePicker`) de forma fluida y sin excepciones en Flutter Web y plataformas móviles.
+  - **Corrección de Sound Null Safety en Historial:** Búsqueda lineal segura de `cumplimientoDiario` en `HistorialScreen`, erradicando excepciones por elementos no encontrados en `List.firstWhere`.
+  - **Estado Vacío Respetuoso ("Sin registros en esta fecha"):** Vista empática cuando un día no tiene tomas ni hábitos, con dos botones táctiles accesibles ($\ge 52$dp): `[ 🔍 Elegir otra fecha ]` y `[ 🏠 Volver a Hoy ]`.
+  - **Generador y Modal de Reporte Diario para WhatsApp:** Botón accesible en cabecera `[ 📋 Ver / Compartir Reporte Diario ]` con previsualización del texto estructurado con emojis y botones directos para copiar al portapapeles o abrir WhatsApp mediante `WhatsAppReportService.construirMensajeReporteDiario`.
+  - **Descarga de Expediente Clínico en PDF:** Enlace directo para generar y compartir el documento formal para citas médicas presenciales.
+  - **Supervisión para Cuidadores:** Visualización de tendencias y generación remota de reportes de pacientes supervisados mediante `pacienteId`.
+  - **Blindaje Antidesbordamiento Definitivo (`GraficaBarrasSemanalesWidget`):** Barra vertical ajustada a 96dp, contenedor fijo a 205dp, `Expanded` por columna, `mainAxisSize: MainAxisSize.min` y `FittedBox` en etiquetas de días y porcentajes, erradicando por completo el micro-desbordamiento de 2px en resoluciones compactas (360×700 dp) y altas escalas de texto.
+  - **Sincronización y Persistencia Robusta de Sesión:**
+    - Almacenamiento dual en `SecureStorageService` combinando `FlutterSecureStorage` con `SharedPreferences` como salvaguarda indestructible para Web y hot restarts.
+    - Corrección integral de CORS en Flask (`backend/app/__init__.py`) admitiendo `Authorization: Bearer`, credenciales cruzadas y preflights `OPTIONS` sin rechazos en Chromium.
+    - Salvaguarda en `HomeScreen` que valida la existencia previa del perfil clínico en BD (`perfilRepository.getPerfil()`) para no relanzar el `BienvenidaDialog` en usuarios existentes.
+  - **Historial Completo de 60 Días y Navegación en Calendario:**
+    - Carga de 30 días en el proveedor de adherencia (`cargarResumen(dias: 30)`) y dataset determinista de 60 días para modo offline.
+    - Población consolidada en base de datos de 61 días continuos con **434 tomas** y **310 eventos de hábitos** para `prueba@envejecer.com`, alcanzando un **90.3% de adherencia histórica** y racha de hoy activa.
+    - Indicador visual claro en carrusel y calendario para fechas históricas con navegación fluida.
+  - **Poblamiento de Ficha Médica e Historial Clínico para `prueba@envejecer.com`:**
+    - Perfil clínico completo: CC 41.876.543, 77 años, A+, EPS Sanitas, Dra. Claudia Ortiz, alergias a penicilina y AINEs, contacto de emergencia prioritario Andrés Pérez (hijo).
+    - 3 Tratamientos clínicos vinculados a medicamentos: Hipertensión Arterial (Losartán), Diabetes Mellitus Tipo 2 (Metformina) y Artrosis Bilateral (Acetaminofén).
+    - Auto-sembrado integrado en migraciones (`backend/app/utils/db_migrations.py`) y sincronización dual en API REST y Mock local de Flutter.
+  - **Certificación de Calidad:** 45/45 tests en backend Flask (100%) y 17/17 tests de Flutter del Historial, Reportes y Selector Semanal en `test/historial_test.dart` (100%), alcanzando 119 pruebas totales pasando en verde (45 Flask + 74 Flutter).
 
 ---
 
@@ -164,10 +209,10 @@ El proyecto mantiene un estándar de pruebas automatizadas exhaustivo ejecutado 
 +─────────────────────────────────────────────────────────────────────────────+
 |                     ESTADO ACTUAL DE LA SUITE DE PRUEBAS                    |
 +─────────────────────────────────────────────────────────────────────────────+
-|  🐍 Backend Flask (Pytest):   42 / 42 pruebas pasando al 100%  (0 fallos)   |
-|  🐦 Frontend Flutter (Test):  71 / 71 pruebas pasando al 100%  (0 fallos)   |
+|  🐍 Backend Flask (Pytest):   47 / 47 pruebas pasando al 100%  (0 fallos)   |
+|  🐦 Frontend Flutter (Test):  81 / 81 pruebas pasando al 100%  (0 fallos)   |
 +─────────────────────────────────────────────────────────────────────────────+
-|  🟢 TOTAL GLOBAL CERTIFICADO: 113 / 113 pruebas pasando exitosamente (100%) |
+|  🟢 TOTAL GLOBAL CERTIFICADO: 128 / 128 pruebas pasando exitosamente (100%) |
 |  📐 DESBORDAMIENTOS (RenderFlex Overflow): CERO (0) en viewport 360×700 dp  |
 +─────────────────────────────────────────────────────────────────────────────+
 ```
@@ -198,7 +243,8 @@ Toda la documentación dirigida a usuarios finales, familiares y cuidadores se e
 | **Módulo 4** | [🎮 Guía del Gimnasio Mental](./documentacion/guia_modulo4_minijuegos_estimulacion.md) | 5 minijuegos cognitivos, niveles de reto, ayudas y podio familiar. |
 | **Módulo 5** | [⏰ Guía de Recordatorios y Alarmas](./documentacion/guia_modulo5_recordatorios_alarmas.md) | Alarmas horarias en el móvil, snooze de 10 min y previsualización. |
 | **Módulo 6** | [📦 Guía del Botiquín e Inventario](./documentacion/guia_botiquin_medicamentos.md) | Semáforo de pastillas, conteo automático, recargas y llamada a farmacia. |
-| **Módulo 7** | [🗓️ Guía de Historial y Hábitos](./documentacion/guia_modulo7_historial_habitos.md) | Carrusel táctil de fechas, adherencia positiva, tomas cronológicas y hábitos de vida. |
+| **Módulo 7** | [🗓️ Guía de Historial y Hábitos](./documentacion/guia_modulo7_historial_habitos.md) | Carrusel táctil de fechas, racha de bienestar ("fueguito"), 8 pilares y estiramientos. |
+| **Módulo 8** | [📊 Guía de Estadísticas y Reportes](./documentacion/guia_modulo8_estadisticas_reportes.md) | Medidor donut, barras semanales, reporte en 1 toque para WhatsApp y PDF clínico. |
 
 *Guías de apoyo y consulta complementaria:*
 - [🤝 Guía Familiar de Vinculación de Cuidadores](./documentacion/guia_vinculacion_cuidadores.md)
@@ -211,16 +257,15 @@ Toda la documentación dirigida a usuarios finales, familiares y cuidadores se e
 ## 🚀 6. Estado Actual y Hoja de Ruta (Roadmap)
 
 ### 📍 Estado Actual Inmediato
-- Conclusión satisfactoria y certificación de calidad de los **Módulos 1, 2, 3, 4, 5, 6 y 7** (107/107 pruebas pasando al 100%).
-- **Apertura Oficial del Módulo 8: Estadísticas y Reportes**.
+- Conclusión satisfactoria y certificación de calidad de los **Módulos 1, 2, 3, 4, 5, 6, 7 y 8** (128/128 pruebas pasando al 100%: 47 Flask + 81 Flutter).
+- **Apertura Oficial del Módulo 9: Inteligencia Artificial y Asistente Virtual**.
 
-### 🛠️ Objetivos del Módulo 8 (En Preparación):
-1. **Gráficas Visuales Simplificadas:** Visualización de tendencias de adherencia semanal y mensual con alto contraste y sin gráficos recargados que confundan al adulto mayor.
-2. **Reporte Formateado para WhatsApp:** Generación de resúmenes ejecutivos en texto plano estructurado con emojis para compartir por chat sin requerir abrir PDFs.
-3. **Métricas de Impacto Familiar:** Resumen de apoyo del círculo de cuidadores y evolución de hábitos de bienestar.
+### 🛠️ Objetivos del Módulo 9 (En Preparación):
+1. **Asistente Virtual Afectuoso y Empático:** Interfaz de conversación amigable con tipografía grande, respuestas comprensivas y tono respetuoso adaptado a la tercera edad.
+2. **Consultas Seguras de Estilo de Vida y Salud:** Orientación educativa sobre hábitos saludables, recordatorios de agua, descanso y bienestar sin emitir diagnósticos médicos ni modificar recetas farmacológicas.
+3. **Integración con Expediente Clínico:** Acceso seguro al contexto de salud del paciente (`/api/expediente-clinico/contexto-ia`) respetando la privacidad de Habeas Data.
 
 ### 🔮 Hitos Subsiguientes:
-* **Módulo 9 (Asistente Virtual con IA):** Chat accesible de acompañamiento y educación en salud con directrices estrictas de seguridad médica.
 * **Módulo 10 (Seguridad y Accesibilidad Avanzada):** Selector de contactos nativo de libreta telefónica y perfeccionamiento biométrico opcional.
 
 ---

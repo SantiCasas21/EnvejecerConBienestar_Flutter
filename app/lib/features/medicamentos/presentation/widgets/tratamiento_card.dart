@@ -311,7 +311,7 @@ class TratamientoCard extends StatelessWidget {
                         Text(m.icono, style: const TextStyle(fontSize: 18)),
                         const SizedBox(width: 8),
                         Text(
-                          '${m.nombre} ${m.miligramos != null ? "${m.miligramos}mg" : ""}',
+                          m.nombreConDosis,
                           style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                         ),
                         if (m.estaTomado ?? false) ...[

@@ -410,3 +410,48 @@ def test_consultar_historial_habitos(client, auth_headers):
     assert len(habitos_ayer) == 1
     assert habitos_ayer[0]['tipo'] == 'Caminata'
     assert habitos_ayer[0]['cumplido'] is False
+
+
+def test_resumen_estadisticas_modulo8_semanal_y_mensual(client, auth_headers, test_medicamento):
+    """
+    Prueba el resumen estadístico para el Módulo 8:
+    - Consulta con parámetro ?dias=7 y ?dias=30
+    - Retorno de cumplimiento diario, medicamentos_adherencia, resumen_habitos y racha.
+    """
+    med_id = test_medicamento['id']
+    hoy_str = date.today().isoformat()
+
+    # Registrar toma hoy
+    client.post('/api/historial/tomas', headers=auth_headers, json={
+        'medicamento_id': med_id,
+        'fecha': hoy_str,
+        'hora_programada': '08:00',
+        'estado': 'tomada',
+    })
+
+    # Registrar hábito hoy
+    client.post('/api/habitos', headers=auth_headers, json={
+        'tipo': 'Agua',
+        'meta': 8,
+        'fecha': hoy_str,
+    })
+
+    # Consultar resumen con ?dias=7
+    res7 = client.get('/api/historial/resumen?dias=7', headers=auth_headers)
+    assert res7.status_code == 200
+    data7 = res7.get_json()
+
+    assert 'porcentaje_adherencia_global' in data7
+    assert 'cumplimiento_diario' in data7
+    assert len(data7['cumplimiento_diario']) == 7
+    assert 'medicamentos_adherencia' in data7
+    assert len(data7['medicamentos_adherencia']) >= 1
+    assert 'resumen_habitos' in data7
+    assert 'racha' in data7
+    assert 'racha_actual' in data7['racha']
+
+    # Consultar resumen con ?dias=30
+    res30 = client.get('/api/historial/resumen?dias=30', headers=auth_headers)
+    assert res30.status_code == 200
+    data30 = res30.get_json()
+    assert len(data30['cumplimiento_diario']) == 30

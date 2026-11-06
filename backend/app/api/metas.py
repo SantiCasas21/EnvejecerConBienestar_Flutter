@@ -45,6 +45,17 @@ def incrementar_progreso(id):
         
     return jsonify(schema_one.dump(meta)), 200
 
+@bp.route('/<int:id>', methods=['PUT'])
+@jwt_required()
+def update_meta(id):
+    """Actualiza una meta."""
+    usuario_id = int(get_jwt_identity())
+    data = request.get_json() or {}
+    meta = MetaService.update(id, data, usuario_id)
+    if not meta:
+        return jsonify({"msg": "Meta no encontrada"}), 404
+    return jsonify(schema_one.dump(meta)), 200
+
 @bp.route('/<int:id>', methods=['DELETE'])
 @jwt_required()
 def delete_meta(id):

@@ -1,6 +1,7 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 part 'secure_storage_service.g.dart';
 
@@ -17,11 +18,26 @@ class SecureStorageService {
       await _storage.write(key: _keyAccessToken, value: accessToken);
       await _storage.write(key: _keyRefreshToken, value: refreshToken);
     } catch (_) {}
+
+    // Respaldo simultáneo en SharedPreferences para persistencia indestructible en Web y Hot Restarts
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_keyAccessToken, accessToken);
+      await prefs.setString(_keyRefreshToken, refreshToken);
+    } catch (_) {}
   }
 
   Future<String?> getAccessToken() async {
     try {
-      return await _storage.read(key: _keyAccessToken);
+      final token = await _storage.read(key: _keyAccessToken);
+      if (token != null && token.isNotEmpty) {
+        return token;
+      }
+    } catch (_) {}
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString(_keyAccessToken);
     } catch (_) {
       return null;
     }
@@ -29,7 +45,15 @@ class SecureStorageService {
 
   Future<String?> getRefreshToken() async {
     try {
-      return await _storage.read(key: _keyRefreshToken);
+      final token = await _storage.read(key: _keyRefreshToken);
+      if (token != null && token.isNotEmpty) {
+        return token;
+      }
+    } catch (_) {}
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString(_keyRefreshToken);
     } catch (_) {
       return null;
     }
@@ -39,6 +63,12 @@ class SecureStorageService {
     try {
       await _storage.delete(key: _keyAccessToken);
       await _storage.delete(key: _keyRefreshToken);
+    } catch (_) {}
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_keyAccessToken);
+      await prefs.remove(_keyRefreshToken);
     } catch (_) {}
   }
 }

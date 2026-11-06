@@ -25,6 +25,13 @@ class MetasNotifier extends _$MetasNotifier {
     );
   }
 
+  Future<void> updateMeta(int id, Map<String, dynamic> data) async {
+    final updated = await ref.read(metaRepositoryProvider).updateMeta(id, data);
+    state = AsyncValue.data(
+      state.value?.map((m) => m.id == id ? updated : m).toList() ?? [],
+    );
+  }
+
   Future<void> deleteMeta(int id) async {
     await ref.read(metaRepositoryProvider).deleteMeta(id);
     state = AsyncValue.data(

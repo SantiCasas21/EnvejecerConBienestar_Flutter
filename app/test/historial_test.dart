@@ -9,6 +9,12 @@ import 'package:envejecer_con_bienestar/features/historial/presentation/widgets/
 import 'package:envejecer_con_bienestar/features/historial/presentation/widgets/tarjeta_adherencia_diaria.dart';
 import 'package:envejecer_con_bienestar/features/historial/presentation/widgets/tarjeta_toma_historial.dart';
 import 'package:envejecer_con_bienestar/features/historial/presentation/widgets/seccion_habitos_dia.dart';
+import 'package:envejecer_con_bienestar/core/utils/whatsapp_report_service.dart';
+import 'package:envejecer_con_bienestar/features/historial/data/models/racha_model.dart';
+import 'package:envejecer_con_bienestar/features/historial/presentation/widgets/adherencia_donut_widget.dart';
+import 'package:envejecer_con_bienestar/features/historial/presentation/widgets/grafica_barras_semanales_widget.dart';
+import 'package:envejecer_con_bienestar/features/historial/presentation/widgets/preview_reporte_dialog.dart';
+import 'package:envejecer_con_bienestar/features/historial/presentation/widgets/vista_graficas_reporte.dart';
 
 /// Fake repository para aislar pruebas de llamadas HTTP
 class FakeHistorialRepository implements HistorialRepository {
@@ -56,6 +62,7 @@ class FakeHistorialRepository implements HistorialRepository {
   Future<ResumenAdherenciaModel> getResumenAdherencia({
     DateTime? desde,
     DateTime? hasta,
+    int? dias,
     int? pacienteId,
   }) async {
     return resumen ??
@@ -598,6 +605,400 @@ void main() {
       final overflowErrors = errorList.where((e) => e.toString().contains('A RenderFlex overflowed')).toList();
       expect(overflowErrors, isEmpty, reason: 'Se detectaron errores de desbordamiento de pantalla (RenderFlex overflow)');
       expect(errorList, isEmpty, reason: 'Se produjeron errores durante el renderizado');
+    });
+  });
+
+  group('3. Pruebas Módulo 8: Estadísticas, Gráficas y Reportes de Adherencia', () {
+    test('WhatsAppReportService - generación de mensaje estructurado con emojis y métricas', () {
+      const resumenTest = ResumenAdherenciaModel(
+        usuarioId: 1,
+        fechaInicio: '2026-10-22',
+        fechaFin: '2026-10-28',
+        totalEsperadas: 14,
+        totalTomadas: 12,
+        totalPospuestas: 1,
+        totalOmitidas: 1,
+        porcentajeAdherenciaGlobal: 85.7,
+        medicamentosAdherencia: [
+          MedicamentoAdherenciaModel(
+            medicamentoId: 1,
+            nombre: 'Losartán Potásico',
+            icono: '💊',
+            miligramos: '50mg',
+            colorIcono: '#0D9488',
+            tomadas: 12,
+            esperadas: 14,
+            porcentaje: 85.7,
+            cantidadRestante: 3,
+          ),
+        ],
+        racha: RachaModel(
+          usuarioId: 1,
+          rachaActual: 5,
+          rachaMejor: 10,
+          mensajeRacha: '¡5 días seguidos!',
+        ),
+        resumenHabitos: [
+          HabitoResumenModel(
+            nombre: 'Tomar agua',
+            icono: '💧',
+            cumplidos: 6,
+            totalDias: 7,
+            porcentaje: 85.7,
+          ),
+        ],
+      );
+
+      final mensaje = WhatsAppReportService.construirMensajeReporte(
+        nombrePaciente: 'Esperanza Gómez',
+        resumen: resumenTest,
+        periodoNombre: 'Últimos 7 Días',
+      );
+
+      expect(mensaje, contains('🌿 *ENVEJECER CON BIENESTAR*'));
+      expect(mensaje, contains('📋 *Reporte de Salud y Cumplimiento*'));
+      expect(mensaje, contains('👤 *Paciente:* Esperanza Gómez'));
+      expect(mensaje, contains('🗓️ *Periodo:* Últimos 7 Días (2026-10-22 al 2026-10-28)'));
+      expect(mensaje, contains('💊 *ADHERENCIA A MEDICAMENTOS:*'));
+      expect(mensaje, contains('• Cumplimiento Global: *85.7%*'));
+      expect(mensaje, contains('• Tomas Registradas: *12 de 14 esperadas*'));
+      expect(mensaje, contains('• Tomas Pospuestas: 1'));
+      expect(mensaje, contains('• Tomas Omitidas: 1'));
+      expect(mensaje, contains('• 💊 *Losartán Potásico* (50mg): 86% (12/14) ⚠️ _(Quedan 3 pastillas)_'));
+      expect(mensaje, contains('🔥 *RACHA DE BIENESTAR:*'));
+      expect(mensaje, contains('• *5 días consecutivos* cuidando su salud con constancia.'));
+      expect(mensaje, contains('🌱 *HÁBITOS DE VIDA SALUDABLE:*'));
+      expect(mensaje, contains('• 💧 *Tomar agua:* 6 de 7 días (86%)'));
+      expect(mensaje, contains('✨ _Generado con amor por Envejecer con Bienestar._'));
+    });
+
+    testWidgets('PreviewReporteDialog - renderiza vista previa, copia al portapapeles y botones de acción', (tester) async {
+      const resumenTest = ResumenAdherenciaModel(
+        usuarioId: 1,
+        fechaInicio: '2026-10-22',
+        fechaFin: '2026-10-28',
+        totalEsperadas: 14,
+        totalTomadas: 14,
+        totalPospuestas: 0,
+        totalOmitidas: 0,
+        porcentajeAdherenciaGlobal: 100.0,
+      );
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: PreviewReporteDialog(
+              nombrePaciente: 'Esperanza Gómez',
+              resumen: resumenTest,
+              periodoNombre: 'Últimos 7 Días',
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Verificar encabezado y formato amigable
+      expect(find.text('Vista Previa del Reporte'), findsOneWidget);
+      expect(find.text('Formato amigable para WhatsApp'), findsOneWidget);
+
+      // Verificar burbuja de texto con contenido
+      expect(find.byType(SelectableText), findsOneWidget);
+      expect(find.textContaining('Esperanza Gómez'), findsOneWidget);
+      expect(find.textContaining('100.0%'), findsOneWidget);
+
+      // Botón copiar al portapapeles
+      final botonCopiar = find.byTooltip('Copiar texto');
+      expect(botonCopiar, findsOneWidget);
+      await tester.tap(botonCopiar);
+      await tester.pump(); // Inicia animación del SnackBar
+      expect(find.text('📋 Reporte copiado al portapapeles.'), findsOneWidget);
+
+      // Botones Cerrar y Enviar a WhatsApp
+      expect(find.text('Cerrar'), findsOneWidget);
+      expect(find.text('Enviar a WhatsApp'), findsOneWidget);
+      expect(find.byIcon(Icons.send_rounded), findsOneWidget);
+    });
+
+    testWidgets('VistaGraficasReporte - selector 7 vs 30 días, Donut y barras semanales', (tester) async {
+      const resumen7Dias = ResumenAdherenciaModel(
+        usuarioId: 1,
+        fechaInicio: '2026-10-22',
+        fechaFin: '2026-10-28',
+        totalEsperadas: 14,
+        totalTomadas: 12,
+        totalPospuestas: 1,
+        totalOmitidas: 1,
+        porcentajeAdherenciaGlobal: 85.7,
+        cumplimientoDiario: [
+          CumplimientoDiarioModel(fecha: '2026-10-22', diaSemana: 'Jue', esperadas: 2, tomadas: 2, pospuestas: 0, omitidas: 0, porcentaje: 100.0),
+          CumplimientoDiarioModel(fecha: '2026-10-23', diaSemana: 'Vie', esperadas: 2, tomadas: 2, pospuestas: 0, omitidas: 0, porcentaje: 100.0),
+          CumplimientoDiarioModel(fecha: '2026-10-24', diaSemana: 'Sáb', esperadas: 2, tomadas: 1, pospuestas: 1, omitidas: 0, porcentaje: 50.0),
+          CumplimientoDiarioModel(fecha: '2026-10-25', diaSemana: 'Dom', esperadas: 2, tomadas: 2, pospuestas: 0, omitidas: 0, porcentaje: 100.0),
+          CumplimientoDiarioModel(fecha: '2026-10-26', diaSemana: 'Lun', esperadas: 2, tomadas: 2, pospuestas: 0, omitidas: 0, porcentaje: 100.0),
+          CumplimientoDiarioModel(fecha: '2026-10-27', diaSemana: 'Mar', esperadas: 2, tomadas: 2, pospuestas: 0, omitidas: 0, porcentaje: 100.0),
+          CumplimientoDiarioModel(fecha: '2026-10-28', diaSemana: 'Mié', esperadas: 2, tomadas: 1, pospuestas: 0, omitidas: 1, porcentaje: 50.0),
+        ],
+        medicamentosAdherencia: [
+          MedicamentoAdherenciaModel(
+            medicamentoId: 1,
+            nombre: 'Losartán 50mg',
+            icono: '💊',
+            tomadas: 12,
+            esperadas: 14,
+            porcentaje: 85.7,
+          ),
+        ],
+        resumenHabitos: [
+          HabitoResumenModel(nombre: 'Tomar agua', icono: '💧', cumplidos: 6, totalDias: 7, porcentaje: 85.7),
+        ],
+        racha: RachaModel(
+          usuarioId: 1,
+          rachaActual: 5,
+          rachaMejor: 10,
+          mensajeRacha: '¡5 días seguidos!',
+        ),
+      );
+
+      final fakeRepo = FakeHistorialRepository(resumen: resumen7Dias);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            historialRepositoryProvider.overrideWithValue(fakeRepo),
+          ],
+          child: const MaterialApp(
+            home: Scaffold(
+              body: VistaGraficasReporte(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Selector de periodos
+      expect(find.text('🗓️ Últimos 7 Días'), findsOneWidget);
+      expect(find.text('📆 Últimos 30 Días'), findsOneWidget);
+
+      // Donut Widget
+      expect(find.byType(AdherenciaDonutWidget), findsOneWidget);
+      expect(find.text('85%'), findsWidgets);
+      expect(find.text('Adherencia'), findsWidgets);
+
+      // Gráfica de barras semanales
+      expect(find.byType(GraficaBarrasSemanalesWidget), findsOneWidget);
+      expect(find.text('Cumplimiento por Día'), findsOneWidget);
+
+      // Tarjetas de KPIs (tomas, hábitos, racha)
+      expect(find.text('12'), findsOneWidget);
+      expect(find.text('de 14 tomas'), findsOneWidget);
+      expect(find.text('5'), findsOneWidget);
+      expect(find.text('días de racha'), findsOneWidget);
+
+      // Botón de WhatsApp
+      expect(find.text('Compartir Resumen por WhatsApp'), findsOneWidget);
+
+      // Tocar selector para cambiar a 30 días
+      await tester.tap(find.text('📆 Últimos 30 Días'));
+      await tester.pumpAndSettle();
+      expect(find.text('📆 Últimos 30 Días'), findsOneWidget);
+    });
+
+    testWidgets('Robustez visual Módulo 8: cero RenderFlex overflow en 360x700 con font scale 1.2', (tester) async {
+      tester.view.physicalSize = const Size(360, 700);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      final errorList = <FlutterErrorDetails>[];
+      final oldOnError = FlutterError.onError;
+      addTearDown(() {
+        FlutterError.onError = oldOnError;
+      });
+      FlutterError.onError = (details) {
+        errorList.add(details);
+      };
+
+      const resumenCompleto = ResumenAdherenciaModel(
+        usuarioId: 1,
+        fechaInicio: '2026-10-01',
+        fechaFin: '2026-10-28',
+        totalEsperadas: 28,
+        totalTomadas: 26,
+        totalPospuestas: 1,
+        totalOmitidas: 1,
+        porcentajeAdherenciaGlobal: 92.9,
+        cumplimientoDiario: [
+          CumplimientoDiarioModel(fecha: '2026-10-22', diaSemana: 'Jue', esperadas: 2, tomadas: 2, pospuestas: 0, omitidas: 0, porcentaje: 100.0),
+          CumplimientoDiarioModel(fecha: '2026-10-23', diaSemana: 'Vie', esperadas: 2, tomadas: 2, pospuestas: 0, omitidas: 0, porcentaje: 100.0),
+          CumplimientoDiarioModel(fecha: '2026-10-24', diaSemana: 'Sáb', esperadas: 2, tomadas: 2, pospuestas: 0, omitidas: 0, porcentaje: 100.0),
+          CumplimientoDiarioModel(fecha: '2026-10-25', diaSemana: 'Dom', esperadas: 2, tomadas: 2, pospuestas: 0, omitidas: 0, porcentaje: 100.0),
+          CumplimientoDiarioModel(fecha: '2026-10-26', diaSemana: 'Lun', esperadas: 2, tomadas: 2, pospuestas: 0, omitidas: 0, porcentaje: 100.0),
+          CumplimientoDiarioModel(fecha: '2026-10-27', diaSemana: 'Mar', esperadas: 2, tomadas: 2, pospuestas: 0, omitidas: 0, porcentaje: 100.0),
+          CumplimientoDiarioModel(fecha: '2026-10-28', diaSemana: 'Mié', esperadas: 2, tomadas: 2, pospuestas: 0, omitidas: 0, porcentaje: 100.0),
+        ],
+        medicamentosAdherencia: [
+          MedicamentoAdherenciaModel(
+            medicamentoId: 1,
+            nombre: 'Losartán Potásico de 50mg con nombre largo para probar desborde',
+            icono: '💊',
+            miligramos: '50mg',
+            tomadas: 26,
+            esperadas: 28,
+            porcentaje: 92.9,
+            cantidadRestante: 4,
+          ),
+        ],
+        resumenHabitos: [
+          HabitoResumenModel(nombre: 'Hidratación y 8 vasos de agua diaria', icono: '💧', cumplidos: 25, totalDias: 28, porcentaje: 89.3),
+        ],
+        racha: RachaModel(
+          usuarioId: 1,
+          rachaActual: 14,
+          rachaMejor: 21,
+          mensajeRacha: '¡Dos semanas completas de salud! 🔥',
+        ),
+      );
+
+      final fakeRepo = FakeHistorialRepository(resumen: resumenCompleto);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            historialRepositoryProvider.overrideWithValue(fakeRepo),
+          ],
+          child: const MaterialApp(
+            home: MediaQuery(
+              data: MediaQueryData(
+                size: Size(360, 700),
+                textScaler: TextScaler.linear(1.2),
+              ),
+              child: Scaffold(
+                body: VistaGraficasReporte(),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(VistaGraficasReporte), findsOneWidget);
+      expect(find.byType(AdherenciaDonutWidget), findsOneWidget);
+      expect(find.byType(GraficaBarrasSemanalesWidget), findsOneWidget);
+
+      // Scroll para recorrer toda la vista
+      await tester.drag(find.byType(SingleChildScrollView), const Offset(0, -500));
+      await tester.pumpAndSettle();
+
+      FlutterError.onError = oldOnError;
+
+      final overflowErrors = errorList.where((e) => e.toString().contains('A RenderFlex overflowed')).toList();
+      expect(overflowErrors, isEmpty, reason: 'Se detectó desbordamiento RenderFlex en pantalla compacta 360x700 con escala 1.2');
+      expect(errorList, isEmpty, reason: 'Se produjeron errores durante el renderizado');
+    });
+
+    test('WhatsAppReportService - generar reporte diario estructurado', () {
+      final tomas = [
+        HistorialTomaModel(
+          id: 1,
+          usuarioId: 3,
+          medicamentoId: 1,
+          medicamentoNombre: 'Losartán 50mg',
+          horaProgramada: '08:00',
+          estado: 'tomada',
+          fecha: '2026-09-15',
+        ),
+      ];
+      final habitos = [
+        const HabitoHistorialModel(
+          id: 1,
+          tipo: 'agua',
+          meta: 2000,
+          progresoActual: 2000,
+          porcentaje: 100.0,
+          fecha: '2026-09-15',
+          cumplido: true,
+        ),
+      ];
+
+      final mensaje = WhatsAppReportService.construirMensajeReporteDiario(
+        nombrePaciente: 'Adulto Mayor Demo',
+        fechaTexto: '15 de Septiembre de 2026',
+        adherencia: 100.0,
+        tomas: tomas,
+        habitos: habitos,
+      );
+
+      expect(mensaje, contains('Reporte Diario de Salud'));
+      expect(mensaje, contains('Adulto Mayor Demo'));
+      expect(mensaje, contains('15 de Septiembre de 2026'));
+      expect(mensaje, contains('Losartán 50mg'));
+      expect(mensaje, contains('100% de cumplimiento'));
+    });
+
+    testWidgets('HistorialScreen - consulta de fecha sin registros muestra estado vacío con acciones', (tester) async {
+      final fakeRepo = FakeHistorialRepository(
+        tomas: [],
+        habitos: [],
+        resumen: const ResumenAdherenciaModel(
+          usuarioId: 3,
+          fechaInicio: '2026-06-01',
+          fechaFin: '2026-06-01',
+          totalEsperadas: 0,
+          totalTomadas: 0,
+          totalPospuestas: 0,
+          totalOmitidas: 0,
+          porcentajeAdherenciaGlobal: 0.0,
+        ),
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            historialRepositoryProvider.overrideWithValue(fakeRepo),
+          ],
+          child: const MaterialApp(
+            home: HistorialScreen(fechaInicial: '2026-06-01'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Sin registros en esta fecha'), findsOneWidget);
+      expect(find.text('Elegir otra fecha'), findsOneWidget);
+      expect(find.text('Volver a Hoy'), findsOneWidget);
+    });
+
+    testWidgets('SelectorSemanalWidget - navegación entre semanas con chevrons y 7 días', (tester) async {
+      DateTime fechaActual = DateTime(2026, 10, 29); // Jueves 29 Oct 2026
+      DateTime? fechaSeleccionada;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SelectorSemanalWidget(
+              selectedDate: fechaActual,
+              onDateSelected: (nueva) {
+                fechaSeleccionada = nueva;
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SelectorSemanalWidget), findsOneWidget);
+      expect(find.byIcon(Icons.chevron_left_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.chevron_right_rounded), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.chevron_left_rounded));
+      await tester.pumpAndSettle();
+
+      expect(fechaSeleccionada, isNotNull);
+      expect(fechaSeleccionada!.day, equals(22));
+
+      await tester.tap(find.byIcon(Icons.chevron_right_rounded));
+      await tester.pumpAndSettle();
+
+      expect(fechaSeleccionada!.day, equals(5));
     });
   });
 }

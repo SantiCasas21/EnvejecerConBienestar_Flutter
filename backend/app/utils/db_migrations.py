@@ -96,5 +96,32 @@ def run_db_migrations() -> None:
             conn.commit()
             logger.info("✅ [MIGRACIONES] Nombres canónicos de actividades cognitivas normalizados.")
 
+        # Asegurar datos continuos de 2 meses para usuario de prueba prueba@envejecer.com
+        try:
+            from app.models.usuario import Usuario
+            from app.models.historial_toma import HistorialToma
+            u_demo = Usuario.query.filter_by(email='prueba@envejecer.com').first()
+            if not u_demo or HistorialToma.query.filter_by(usuario_id=u_demo.id).count() < 100:
+                import sys, os
+                backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+                if backend_dir not in sys.path:
+                    sys.path.insert(0, backend_dir)
+                from seed_dos_meses_demo import poblar_dos_meses_demo
+                poblar_dos_meses_demo()
+                logger.info("✅ [SEED] 2 meses de datos de prueba para prueba@envejecer.com asegurados automáticamente.")
+        except Exception as e_seed:
+            logger.warning(f"⚠️ [SEED] Advertencia al verificar datos de prueba: {e_seed}")
+        # Asegurar Ficha Médica y Tratamientos Clínicos Estructurados para prueba@envejecer.com
+        try:
+            import sys, os
+            backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+            if backend_dir not in sys.path:
+                sys.path.insert(0, backend_dir)
+            from seed_expediente_clinico import poblar_expediente_clinico
+            poblar_expediente_clinico()
+            logger.info("✅ [SEED] Ficha Médica y Tratamientos Clínicos asegurados exitosamente.")
+        except Exception as e_exp:
+            logger.warning(f"⚠️ [SEED] Advertencia al verificar expediente clínico: {e_exp}")
+
     except Exception as e:
         logger.warning(f"⚠️ [MIGRACIONES] Advertencia durante migración de columnas: {e}")

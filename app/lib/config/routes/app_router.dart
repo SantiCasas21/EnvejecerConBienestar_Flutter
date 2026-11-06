@@ -102,9 +102,11 @@ GoRouter goRouter(Ref ref) {
         builder: (context, state) {
           final pacienteId = state.uri.queryParameters['paciente_id'];
           final fecha = state.uri.queryParameters['fecha'];
+          final tab = state.uri.queryParameters['tab'];
           return HistorialScreen(
             pacienteId: pacienteId != null ? int.tryParse(pacienteId) : null,
             fechaInicial: fecha,
+            tabInicial: tab != null ? int.tryParse(tab) ?? 0 : 0,
           );
         },
       ),

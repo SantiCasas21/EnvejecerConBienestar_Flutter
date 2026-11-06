@@ -158,9 +158,10 @@ class AuthNotifier extends _$AuthNotifier {
     state = AuthState(
       status: AuthStatus.authenticated,
       user: const UsuarioModel(
-        id: 999,
-        nombre: 'Adulto Mayor (Prueba)',
+        id: 3,
+        nombre: 'Adulto Mayor Demo',
         email: 'prueba@envejecer.com',
+        codigoVinculacion: 'ECB-1002',
       ),
     );
   }

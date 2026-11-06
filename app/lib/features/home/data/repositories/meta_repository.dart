@@ -26,6 +26,11 @@ class MetaRepository {
     return MetaModel.fromJson(response.data);
   }
 
+  Future<MetaModel> updateMeta(int id, Map<String, dynamic> data) async {
+    final response = await _dio.put('/metas/$id', data: data);
+    return MetaModel.fromJson(response.data);
+  }
+
   Future<void> deleteMeta(int id) async {
     await _dio.delete('/metas/$id');
   }

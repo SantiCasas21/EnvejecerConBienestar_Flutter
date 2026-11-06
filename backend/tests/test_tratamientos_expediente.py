@@ -297,3 +297,123 @@ def test_prediccion_adherencia_ml(client, auth_headers, test_user):
     assert data["modelo_ml"]["nombre"] == "Geriatric Adherence Logistic Classifier (GALC-v1)"
     assert len(data["factores_riesgo_detectados"]) >= 1
 
+
+def test_actualizar_tratamiento_reasignar_medicamentos_y_adherencia(client, auth_headers, test_user):
+    """
+    Prueba que PUT /api/tratamientos/<id> permita modificar 'medicamento_ids',
+    desvinculando los previos, vinculando los nuevos y retornando el payload
+    con la lista de medicamentos actualizada y la adherencia recalculada.
+    """
+    # 1. Crear 2 medicamentos para el usuario
+    m1 = Medicamento(
+        usuario_id=test_user.id,
+        nombre="Losartán",
+        miligramos="50 mg",
+        esta_tomado=True
+    )
+    m2 = Medicamento(
+        usuario_id=test_user.id,
+        nombre="Amlodipino",
+        miligramos="5 mg",
+        esta_tomado=False
+    )
+    db.session.add_all([m1, m2])
+    db.session.commit()
+
+    # 2. Crear tratamiento vinculado inicialmente a m1
+    res_crear = client.post('/api/tratamientos', json={
+        "diagnostico": "Hipertensión Esencial",
+        "especialidad_medica": "Cardiología",
+        "es_cronico": True,
+        "medicamento_ids": [m1.id]
+    }, headers=auth_headers)
+    assert res_crear.status_code == 201
+    t_id = res_crear.get_json()["id"]
+    assert res_crear.get_json()["adherencia_porcentaje"] == 100.0  # m1 tomado
+    assert len(res_crear.get_json()["medicamentos"]) == 1
+    assert res_crear.get_json()["medicamentos"][0]["id"] == m1.id
+
+    # 3. Actualizar tratamiento desvinculando m1 y vinculando m2 (esta_tomado=False)
+    payload_update = {
+        "diagnostico": "Hipertensión Grado I",
+        "especialidad_medica": "Cardiología Preventiva",
+        "medicamento_ids": [m2.id]
+    }
+    res_update = client.put(f'/api/tratamientos/{t_id}', json=payload_update, headers=auth_headers)
+    assert res_update.status_code == 200
+    data_update = res_update.get_json()
+
+    # Verificar que el diagnóstico cambió
+    assert data_update["diagnostico"] == "Hipertensión Grado I"
+    assert data_update["especialidad_medica"] == "Cardiología Preventiva"
+
+    # Verificar que la lista de medicamentos en el payload retornado contenga SOLO m2
+    meds_actuales = data_update["medicamentos"]
+    assert len(meds_actuales) == 1, f"Se esperaba 1 medicamento vinculado, pero hay: {len(meds_actuales)}"
+    assert meds_actuales[0]["id"] == m2.id
+    assert meds_actuales[0]["nombre"] == "Amlodipino"
+
+    # Verificar que la adherencia calculada se actualizó a 0.0% (m2 no está tomado)
+    assert data_update["adherencia_porcentaje"] == 0.0
+
+    # 4. Verificar en base de datos que m1 ya no tenga tratamiento_id y m2 sí
+    db.session.expire_all()
+    m1_db = db.session.get(Medicamento, m1.id)
+    m2_db = db.session.get(Medicamento, m2.id)
+    assert m1_db.tratamiento_id is None
+    assert m2_db.tratamiento_id == t_id
+
+
+def test_actualizar_tratamiento_edge_cases(client, auth_headers, test_user):
+    """
+    Prueba casos límite de PUT /api/tratamientos/<id>:
+    - Tratamiento inexistente (404)
+    - Reasignar con medicamento inexistente
+    - Reasignar con medicamento perteneciente a otro usuario (no debe vincularse)
+    """
+    # 1. Tratamiento inexistente -> 404
+    res_404 = client.put('/api/tratamientos/999999', json={"diagnostico": "Fantasma"}, headers=auth_headers)
+    assert res_404.status_code == 404
+
+    # 2. Crear tratamiento base
+    t = Tratamiento(
+        usuario_id=test_user.id,
+        diagnostico="Artritis",
+        especialidad_medica="Reumatología"
+    )
+    db.session.add(t)
+    db.session.commit()
+
+    # 3. Crear otro usuario con su propio medicamento
+    otro_usuario = Usuario(nombre="Otro Usuario", email="otro@example.com")
+    otro_usuario.set_password("pass123")
+    db.session.add(otro_usuario)
+    db.session.commit()
+
+    med_otro = Medicamento(
+        usuario_id=otro_usuario.id,
+        nombre="Medicación Ajena",
+        miligramos="10 mg"
+    )
+    db.session.add(med_otro)
+    db.session.commit()
+
+    # 4. Intentar actualizar pasando med_id inexistente (98765) y med_id de otro usuario
+    payload = {
+        "diagnostico": "Artritis Reumatoide",
+        "medicamento_ids": [98765, med_otro.id]
+    }
+    res = client.put(f'/api/tratamientos/{t.id}', json=payload, headers=auth_headers)
+    assert res.status_code == 200
+    data = res.get_json()
+
+    # No debe vincular ni el inexistente ni el del otro usuario
+    assert len(data["medicamentos"]) == 0
+    assert data["adherencia_porcentaje"] == 100.0
+
+    # Verificar en BD que el medicamento del otro usuario no fue alterado
+    db.session.expire_all()
+    med_otro_db = db.session.get(Medicamento, med_otro.id)
+    assert med_otro_db.tratamiento_id is None
+
+

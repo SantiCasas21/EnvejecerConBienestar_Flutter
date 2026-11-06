@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../config/theme/app_colors.dart';
+import '../../data/models/meta_model.dart';
 
 class AddMetaDialog extends StatefulWidget {
-  const AddMetaDialog({super.key});
+  final MetaModel? metaAEditar;
+
+  const AddMetaDialog({super.key, this.metaAEditar});
 
   @override
   State<AddMetaDialog> createState() => _AddMetaDialogState();
@@ -11,10 +14,21 @@ class AddMetaDialog extends StatefulWidget {
 
 class _AddMetaDialogState extends State<AddMetaDialog> {
   final _formKey = GlobalKey<FormState>();
-  final _nombreController = TextEditingController(text: 'Tomar agua');
-  int _objetivo = 8;
-  String _unidad = 'vasos';
-  String _iconoSeleccionado = '💧';
+  late final TextEditingController _nombreController;
+  late final TextEditingController _unidadController;
+  late int _objetivo;
+  late String _unidad;
+  late String _iconoSeleccionado;
+  String? _habitoRecomendadoSeleccionado;
+
+  static const List<String> _emojisDisponibles = [
+    '💧', '🚶', '☀️', '🧘', '😴', '🥗', '📞', '🧠',
+    '🍎', '🍵', '📖', '🎨', '🎵', '🐶', '🚴', '❤️',
+  ];
+
+  static const List<String> _unidadesSugeridas = [
+    'vasos', 'minutos', 'horas', 'porciones', 'veces', 'páginas', 'cuadras',
+  ];
 
   final List<Map<String, dynamic>> _catalogoHabitos = [
     {
@@ -22,7 +36,7 @@ class _AddMetaDialogState extends State<AddMetaDialog> {
       'objetivo': 8,
       'unidad': 'vasos',
       'icono': '💧',
-      'color': Color(0xFF0284C7),
+      'color': const Color(0xFF0284C7),
       'descripcion': 'Mantén tu hidratación y vitalidad.',
     },
     {
@@ -30,7 +44,7 @@ class _AddMetaDialogState extends State<AddMetaDialog> {
       'objetivo': 30,
       'unidad': 'minutos',
       'icono': '🚶',
-      'color': Color(0xFF059669),
+      'color': const Color(0xFF059669),
       'descripcion': 'Activa tu corazón y articulaciones.',
     },
     {
@@ -38,7 +52,7 @@ class _AddMetaDialogState extends State<AddMetaDialog> {
       'objetivo': 15,
       'unidad': 'minutos',
       'icono': '☀️',
-      'color': Color(0xFFD97706),
+      'color': const Color(0xFFD97706),
       'descripcion': 'Luz natural para tus huesos y ánimo.',
     },
     {
@@ -46,7 +60,7 @@ class _AddMetaDialogState extends State<AddMetaDialog> {
       'objetivo': 10,
       'unidad': 'minutos',
       'icono': '🧘',
-      'color': Color(0xFF4F46E5),
+      'color': const Color(0xFF4F46E5),
       'descripcion': 'Alivia tensiones de espalda y cuello.',
     },
     {
@@ -54,7 +68,7 @@ class _AddMetaDialogState extends State<AddMetaDialog> {
       'objetivo': 8,
       'unidad': 'horas',
       'icono': '😴',
-      'color': Color(0xFF6366F1),
+      'color': const Color(0xFF6366F1),
       'descripcion': 'Descanso nocturno tranquilo.',
     },
     {
@@ -62,7 +76,7 @@ class _AddMetaDialogState extends State<AddMetaDialog> {
       'objetivo': 3,
       'unidad': 'porciones',
       'icono': '🥗',
-      'color': Color(0xFF16A34A),
+      'color': const Color(0xFF16A34A),
       'descripcion': 'Nutrición colorida y balanceada.',
     },
     {
@@ -70,7 +84,7 @@ class _AddMetaDialogState extends State<AddMetaDialog> {
       'objetivo': 1,
       'unidad': 'charla',
       'icono': '📞',
-      'color': Color(0xFFE11D48),
+      'color': const Color(0xFFE11D48),
       'descripcion': 'Comparte alegría con tus seres queridos.',
     },
     {
@@ -78,24 +92,58 @@ class _AddMetaDialogState extends State<AddMetaDialog> {
       'objetivo': 15,
       'unidad': 'minutos',
       'icono': '🧠',
-      'color': Color(0xFF9333EA),
+      'color': const Color(0xFF9333EA),
       'descripcion': 'Sudoku, lectura o juegos de agilidad.',
     },
   ];
 
   @override
+  void initState() {
+    super.initState();
+    final editando = widget.metaAEditar;
+    if (editando != null) {
+      _nombreController = TextEditingController(text: editando.nombre);
+      _objetivo = editando.objetivo;
+      _unidad = editando.unidad;
+      _iconoSeleccionado = editando.icono;
+      _unidadController = TextEditingController(text: editando.unidad);
+      _habitoRecomendadoSeleccionado = null; // En edición arranca libre
+    } else {
+      _nombreController = TextEditingController(text: 'Tomar agua');
+      _objetivo = 8;
+      _unidad = 'vasos';
+      _iconoSeleccionado = '💧';
+      _unidadController = TextEditingController(text: 'vasos');
+      _habitoRecomendadoSeleccionado = 'Tomar agua';
+    }
+  }
+
+  @override
   void dispose() {
     _nombreController.dispose();
+    _unidadController.dispose();
     super.dispose();
   }
 
   void _seleccionarHabito(Map<String, dynamic> habito) {
     HapticFeedback.selectionClick();
     setState(() {
+      _habitoRecomendadoSeleccionado = habito['nombre'] as String;
       _nombreController.text = habito['nombre'] as String;
       _objetivo = habito['objetivo'] as int;
       _unidad = habito['unidad'] as String;
+      _unidadController.text = _unidad;
       _iconoSeleccionado = habito['icono'] as String;
+    });
+  }
+
+  void _activarModoPersonalizado() {
+    HapticFeedback.selectionClick();
+    setState(() {
+      _habitoRecomendadoSeleccionado = null;
+      if (_nombreController.text == 'Tomar agua' && widget.metaAEditar == null) {
+        _nombreController.clear();
+      }
     });
   }
 
@@ -103,7 +151,7 @@ class _AddMetaDialogState extends State<AddMetaDialog> {
     HapticFeedback.lightImpact();
     setState(() {
       final nuevo = _objetivo + delta;
-      if (nuevo >= 1 && nuevo <= 120) {
+      if (nuevo >= 1 && nuevo <= 300) {
         _objetivo = nuevo;
       }
     });
@@ -112,11 +160,15 @@ class _AddMetaDialogState extends State<AddMetaDialog> {
   void _guardar() {
     if (_formKey.currentState!.validate()) {
       HapticFeedback.mediumImpact();
+      final unidadFinal = _unidadController.text.trim().isNotEmpty
+          ? _unidadController.text.trim()
+          : _unidad;
+
       Navigator.of(context).pop({
         'nombre': _nombreController.text.trim(),
         'objetivo': _objetivo,
-        'progreso': 0,
-        'unidad': _unidad.trim(),
+        'progreso': widget.metaAEditar?.progreso ?? 0,
+        'unidad': unidadFinal,
         'icono': _iconoSeleccionado,
       });
     }
@@ -124,6 +176,8 @@ class _AddMetaDialogState extends State<AddMetaDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final esEdicion = widget.metaAEditar != null;
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       backgroundColor: Colors.white,
@@ -142,23 +196,24 @@ class _AddMetaDialogState extends State<AddMetaDialog> {
                 Row(
                   children: [
                     Container(
-                      width: 48,
-                      height: 48,
+                      width: 50,
+                      height: 50,
                       decoration: BoxDecoration(
                         color: AppColors.primaryLight.withValues(alpha: 0.5),
                         shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.primaryTeal.withValues(alpha: 0.4)),
                       ),
                       alignment: Alignment.center,
-                      child: Text(_iconoSeleccionado, style: const TextStyle(fontSize: 26)),
+                      child: Text(_iconoSeleccionado, style: const TextStyle(fontSize: 28)),
                     ),
                     const SizedBox(width: 14),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Nuevo Hábito de Bienestar',
-                            style: TextStyle(
+                            esEdicion ? '✏️ Modificar Hábito' : 'Nuevo Hábito de Bienestar',
+                            style: const TextStyle(
                               fontFamily: 'Nunito',
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
@@ -166,8 +221,10 @@ class _AddMetaDialogState extends State<AddMetaDialog> {
                             ),
                           ),
                           Text(
-                            'Elige una sugerencia o personalízalo',
-                            style: TextStyle(
+                            esEdicion
+                                ? 'Ajusta tu meta o personaliza su nombre'
+                                : 'Elige una sugerencia o crea tu propio hábito',
+                            style: const TextStyle(
                               fontFamily: 'Nunito',
                               fontSize: 14,
                               color: AppColors.textSecondary,
@@ -184,9 +241,9 @@ class _AddMetaDialogState extends State<AddMetaDialog> {
                 ),
                 const SizedBox(height: 18),
 
-                // Sugerencias rápidas tipo chips accesibles
+                // Sugerencias rápidas tipo chips accesibles + Opción "Personalizado"
                 const Text(
-                  'Elige un hábito recomendado:',
+                  'Elige un hábito o crea uno propio:',
                   style: TextStyle(
                     fontFamily: 'Nunito',
                     fontSize: 16,
@@ -198,46 +255,139 @@ class _AddMetaDialogState extends State<AddMetaDialog> {
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: _catalogoHabitos.map((habito) {
-                    final esSeleccionado = _nombreController.text == habito['nombre'];
-                    return InkWell(
-                      onTap: () => _seleccionarHabito(habito),
+                  children: [
+                    // Chip explícito de Hábito Personalizado
+                    InkWell(
+                      onTap: _activarModoPersonalizado,
                       borderRadius: BorderRadius.circular(14),
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         decoration: BoxDecoration(
-                          color: esSeleccionado ? AppColors.primaryTeal : const Color(0xFFF8FAFC),
+                          color: _habitoRecomendadoSeleccionado == null
+                              ? AppColors.primaryTeal
+                              : const Color(0xFFF8FAFC),
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(
-                            color: esSeleccionado ? AppColors.primaryTeal : const Color(0xFFE2E8F0),
-                            width: esSeleccionado ? 2 : 1,
+                            color: _habitoRecomendadoSeleccionado == null
+                                ? AppColors.primaryTeal
+                                : const Color(0xFFE2E8F0),
+                            width: _habitoRecomendadoSeleccionado == null ? 2 : 1,
                           ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(habito['icono'] as String, style: const TextStyle(fontSize: 18)),
+                            const Text('✨', style: TextStyle(fontSize: 18)),
                             const SizedBox(width: 8),
                             Text(
-                              habito['nombre'] as String,
+                              'Personalizado',
                               style: TextStyle(
                                 fontFamily: 'Nunito',
                                 fontSize: 14,
-                                fontWeight: esSeleccionado ? FontWeight.bold : FontWeight.w600,
-                                color: esSeleccionado ? Colors.white : AppColors.textPrimary,
+                                fontWeight: _habitoRecomendadoSeleccionado == null
+                                    ? FontWeight.bold
+                                    : FontWeight.w600,
+                                color: _habitoRecomendadoSeleccionado == null
+                                    ? Colors.white
+                                    : AppColors.textPrimary,
                               ),
                             ),
                           ],
                         ),
                       ),
+                    ),
+                    ..._catalogoHabitos.map((habito) {
+                      final esSeleccionado = _habitoRecomendadoSeleccionado == habito['nombre'];
+                      return InkWell(
+                        onTap: () => _seleccionarHabito(habito),
+                        borderRadius: BorderRadius.circular(14),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: esSeleccionado ? AppColors.primaryTeal : const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: esSeleccionado ? AppColors.primaryTeal : const Color(0xFFE2E8F0),
+                              width: esSeleccionado ? 2 : 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(habito['icono'] as String, style: const TextStyle(fontSize: 18)),
+                              const SizedBox(width: 8),
+                              Text(
+                                habito['nombre'] as String,
+                                style: TextStyle(
+                                  fontFamily: 'Nunito',
+                                  fontSize: 14,
+                                  fontWeight: esSeleccionado ? FontWeight.bold : FontWeight.w600,
+                                  color: esSeleccionado ? Colors.white : AppColors.textPrimary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                // Selector de Icono / Emoji Táctil Accesible
+                const Text(
+                  'Elige el ícono de tu hábito:',
+                  style: TextStyle(
+                    fontFamily: 'Nunito',
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: _emojisDisponibles.map((emoji) {
+                    final seleccionado = _iconoSeleccionado == emoji;
+                    return InkWell(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        setState(() => _iconoSeleccionado = emoji);
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        width: 46,
+                        height: 46,
+                        decoration: BoxDecoration(
+                          color: seleccionado
+                              ? AppColors.primaryTeal.withValues(alpha: 0.15)
+                              : const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: seleccionado ? AppColors.primaryTeal : const Color(0xFFE2E8F0),
+                            width: seleccionado ? 2 : 1,
+                          ),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(emoji, style: const TextStyle(fontSize: 22)),
+                      ),
                     );
                   }).toList(),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 18),
 
                 // Nombre del hábito
                 TextFormField(
                   controller: _nombreController,
+                  onChanged: (val) {
+                    if (_habitoRecomendadoSeleccionado != null &&
+                        val.trim() != _habitoRecomendadoSeleccionado) {
+                      setState(() {
+                        _habitoRecomendadoSeleccionado = null;
+                      });
+                    }
+                  },
                   style: const TextStyle(
                     fontFamily: 'Nunito',
                     fontSize: 17,
@@ -246,7 +396,7 @@ class _AddMetaDialogState extends State<AddMetaDialog> {
                   ),
                   decoration: InputDecoration(
                     labelText: 'Nombre del Hábito',
-                    hintText: 'Ej. Paseo matutino',
+                    hintText: 'Ej. Caminata por el parque',
                     filled: true,
                     fillColor: const Color(0xFFF8FAFC),
                     border: OutlineInputBorder(
@@ -260,7 +410,7 @@ class _AddMetaDialogState extends State<AddMetaDialog> {
                   ),
                   validator: (v) => (v == null || v.trim().isEmpty) ? 'Por favor escribe un nombre' : null,
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 16),
 
                 // Contador asistido de meta diaria
                 Container(
@@ -343,6 +493,45 @@ class _AddMetaDialogState extends State<AddMetaDialog> {
                     ],
                   ),
                 ),
+                const SizedBox(height: 16),
+
+                // Selector de Unidades
+                const Text(
+                  'Unidad de medida:',
+                  style: TextStyle(
+                    fontFamily: 'Nunito',
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _unidadesSugeridas.map((uni) {
+                    final esSeleccionada = _unidad == uni;
+                    return ChoiceChip(
+                      label: Text(uni),
+                      selected: esSeleccionada,
+                      selectedColor: AppColors.primaryTeal,
+                      labelStyle: TextStyle(
+                        fontFamily: 'Nunito',
+                        fontWeight: FontWeight.bold,
+                        color: esSeleccionada ? Colors.white : AppColors.textPrimary,
+                      ),
+                      onSelected: (sel) {
+                        if (sel) {
+                          HapticFeedback.selectionClick();
+                          setState(() {
+                            _unidad = uni;
+                            _unidadController.text = uni;
+                          });
+                        }
+                      },
+                    );
+                  }).toList(),
+                ),
                 const SizedBox(height: 24),
 
                 // Botones de acción
@@ -381,9 +570,9 @@ class _AddMetaDialogState extends State<AddMetaDialog> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                             elevation: 2,
                           ),
-                          child: const Text(
-                            'Guardar Hábito',
-                            style: TextStyle(
+                          child: Text(
+                            esEdicion ? 'Guardar Cambios' : 'Guardar Hábito',
+                            style: const TextStyle(
                               fontFamily: 'Nunito',
                               fontSize: 16,
                               fontWeight: FontWeight.w800,
