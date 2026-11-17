@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_typography.dart';
@@ -19,6 +20,7 @@ class MensajeBurbujaWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final esUsuario = mensaje.esUsuario;
+    final screenWidth = MediaQuery.of(context).size.width;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -32,10 +34,10 @@ class MensajeBurbujaWidget extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (!esUsuario) ...[
-                CircleAvatar(
+                const CircleAvatar(
                   radius: 18,
                   backgroundColor: AppColors.primaryLight,
-                  child: const Icon(
+                  child: Icon(
                     Icons.health_and_safety_rounded,
                     color: AppColors.primaryTeal,
                     size: 22,
@@ -46,7 +48,7 @@ class MensajeBurbujaWidget extends StatelessWidget {
               Flexible(
                 child: Container(
                   constraints: BoxConstraints(
-                    maxWidth: MediaQuery.of(context).size.width * 0.78,
+                    maxWidth: (screenWidth * 0.82).clamp(260.0, 560.0),
                   ),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -54,7 +56,7 @@ class MensajeBurbujaWidget extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: esUsuario
-                        ? AppColors.primaryTeal
+                        ? AppColors.primaryDark
                         : AppColors.cardBackground,
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(18),
@@ -77,6 +79,7 @@ class MensajeBurbujaWidget extends StatelessWidget {
                     mensaje.contenido,
                     style: AppTypography.cuerpo().copyWith(
                       color: esUsuario ? Colors.white : AppColors.textPrimary,
+                      fontWeight: esUsuario ? FontWeight.w600 : FontWeight.w500,
                       height: 1.45,
                     ),
                   ),
@@ -131,16 +134,21 @@ class _AlertaClinicaCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
     final colorBorde =
         esEmergencia ? AppColors.emergencyRed : const Color(0xFFD97706);
     final colorFondo =
         esEmergencia ? const Color(0xFFFFF1F2) : const Color(0xFFFFFBEB);
+    final colorTitulo =
+        esEmergencia ? AppColors.emergencyRed : const Color(0xFF92400E);
+    final colorIcono =
+        esEmergencia ? AppColors.emergencyRed : const Color(0xFFB45309);
     final titulo = esEmergencia
         ? 'Atención Prioritaria de Emergencia'
         : 'Aviso Preventivo de Seguridad';
 
     return Container(
-      margin: const EdgeInsets.only(left: 44),
+      margin: EdgeInsets.only(left: screenWidth < 380 ? 12 : 44),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: colorFondo,
@@ -156,7 +164,7 @@ class _AlertaClinicaCard extends StatelessWidget {
                 esEmergencia
                     ? Icons.emergency_rounded
                     : Icons.warning_amber_rounded,
-                color: colorBorde,
+                color: colorIcono,
                 size: 26,
               ),
               const SizedBox(width: 8),
@@ -166,7 +174,7 @@ class _AlertaClinicaCard extends StatelessWidget {
                   style: AppTypography.subtitulo().copyWith(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: colorBorde,
+                    color: colorTitulo,
                   ),
                 ),
               ),
@@ -178,28 +186,33 @@ class _AlertaClinicaCard extends StatelessWidget {
             style: AppTypography.cuerpo().copyWith(
               fontSize: 17,
               height: 1.4,
+              color: AppColors.textPrimary,
             ),
           ),
           if (esEmergencia) ...[
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
-              height: 54,
+              height: 56,
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.emergencyRed,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
-                onPressed: () => context.go('/contactos'),
+                onPressed: () {
+                  HapticFeedback.mediumImpact();
+                  context.go('/contactos');
+                },
                 icon: const Icon(Icons.phone_in_talk_rounded, size: 24),
                 label: Text(
                   'Ir a Contactos SOS',
                   style: AppTypography.subtitulo().copyWith(
                     color: Colors.white,
                     fontSize: 18,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
@@ -224,8 +237,10 @@ class _AccionPendienteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Container(
-      margin: const EdgeInsets.only(left: 44),
+      margin: EdgeInsets.only(left: screenWidth < 380 ? 12 : 44),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.primaryLight.withValues(alpha: 0.45),
@@ -262,57 +277,104 @@ class _AccionPendienteCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           if (accion.estaPendiente)
-            Row(
-              children: [
-                Expanded(
-                  child: SizedBox(
-                    height: 52,
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.textSecondary,
-                        side: const BorderSide(color: Color(0xFF94A3B8)),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final esEstrecho = constraints.maxWidth < 240;
+
+                final botonCancelar = SizedBox(
+                  height: 52,
+                  width: esEstrecho ? double.infinity : null,
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF334155),
+                      side: const BorderSide(
+                        color: Color(0xFF94A3B8),
+                        width: 1.5,
                       ),
-                      onPressed:
-                          confirmando ? null : () => onConfirmar?.call(false),
-                      child: const Text(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                    onPressed: confirmando
+                        ? null
+                        : () {
+                            HapticFeedback.selectionClick();
+                            onConfirmar?.call(false);
+                          },
+                    child: const FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
                         'Cancelar',
                         style: TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.w600,
+                          color: Color(0xFF334155),
                         ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: SizedBox(
-                    height: 52,
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryTeal,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
+                );
+
+                final botonGuardar = SizedBox(
+                  height: 52,
+                  width: esEstrecho ? double.infinity : null,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryTeal,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
                       ),
-                      onPressed:
-                          confirmando ? null : () => onConfirmar?.call(true),
-                      icon: const Icon(Icons.check_rounded, size: 22),
-                      label: const Text(
-                        'Guardar',
-                        style: TextStyle(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                    onPressed: confirmando
+                        ? null
+                        : () {
+                            HapticFeedback.mediumImpact();
+                            onConfirmar?.call(true);
+                          },
+                    icon: confirmando
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.check_rounded, size: 22),
+                    label: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        confirmando ? 'Guardando...' : 'Guardar',
+                        style: const TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                );
+
+                if (esEstrecho) {
+                  return Column(
+                    children: [
+                      botonGuardar,
+                      const SizedBox(height: 8),
+                      botonCancelar,
+                    ],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    Expanded(child: botonCancelar),
+                    const SizedBox(width: 10),
+                    Expanded(child: botonGuardar),
+                  ],
+                );
+              },
             )
           else
             Row(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_typography.dart';
@@ -22,6 +23,7 @@ class AsistenteScreen extends ConsumerStatefulWidget {
 class _AsistenteScreenState extends ConsumerState<AsistenteScreen> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final FocusNode _focusNode = FocusNode();
 
   static const List<Map<String, String>> _sugerenciasRapidas = [
     {
@@ -50,9 +52,20 @@ class _AsistenteScreenState extends ConsumerState<AsistenteScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(() {
+      if (_focusNode.hasFocus) {
+        Future.delayed(const Duration(milliseconds: 250), _scrollAlFinal);
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     _scrollController.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -71,6 +84,7 @@ class _AsistenteScreenState extends ConsumerState<AsistenteScreen> {
   void _enviar([String? textoDirecto]) {
     final texto = (textoDirecto ?? _controller.text).trim();
     if (texto.isEmpty) return;
+    HapticFeedback.lightImpact();
     if (textoDirecto == null) {
       _controller.clear();
     }
@@ -81,6 +95,7 @@ class _AsistenteScreenState extends ConsumerState<AsistenteScreen> {
   }
 
   Future<void> _confirmarReinicio() async {
+    HapticFeedback.selectionClick();
     final confirmar = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -106,6 +121,7 @@ class _AsistenteScreenState extends ConsumerState<AsistenteScreen> {
       ),
     );
     if (confirmar == true && mounted) {
+      HapticFeedback.mediumImpact();
       ref
           .read(asistenteNotifierProvider(widget.pacienteId).notifier)
           .reiniciarConversacion();
@@ -121,6 +137,9 @@ class _AsistenteScreenState extends ConsumerState<AsistenteScreen> {
         _scrollAlFinal();
       }
     });
+
+    final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+    final chipsBarHeight = (54.0 * textScale).clamp(54.0, 76.0);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -156,195 +175,225 @@ class _AsistenteScreenState extends ConsumerState<AsistenteScreen> {
         ],
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            // Banner informativo de seguridad clínica
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              color: AppColors.primaryLight.withValues(alpha: 0.6),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.verified_user_rounded,
-                    color: AppColors.primaryDark,
-                    size: 22,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Orientación preventiva basada en tu historial. No reemplaza la consulta médica.',
-                      style: AppTypography.pequeno().copyWith(
-                        fontSize: 14,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 760),
+            child: Column(
+              children: [
+                // Banner informativo de seguridad clínica
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  color: AppColors.primaryLight.withValues(alpha: 0.6),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.verified_user_rounded,
                         color: AppColors.primaryDark,
+                        size: 22,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Orientación preventiva basada en tu historial. No reemplaza la consulta médica.',
+                          style: AppTypography.pequeno().copyWith(
+                            fontSize: 14,
+                            color: AppColors.primaryDark,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Lista de mensajes o estado inicial amigable
+                Expanded(
+                  child: state.cargandoHistorial
+                      ? const Center(child: CircularProgressIndicator())
+                      : state.mensajes.isEmpty
+                          ? _VistaBienvenidaAsistente(
+                              nombrePaciente: widget.pacienteNombre,
+                              sugerencias: _sugerenciasRapidas,
+                              onTapSugerencia: (p) => _enviar(p),
+                            )
+                          : ListView.builder(
+                              controller: _scrollController,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 12,
+                              ),
+                              itemCount: state.mensajes.length +
+                                  (state.enviando ? 1 : 0),
+                              itemBuilder: (context, index) {
+                                if (index == state.mensajes.length) {
+                                  return const _IndicadorEscribiendo();
+                                }
+                                final msg = state.mensajes[index];
+                                return MensajeBurbujaWidget(
+                                  mensaje: msg,
+                                  confirmando: state.confirmando,
+                                  onConfirmarAccion: (id, aceptar) {
+                                    ref
+                                        .read(asistenteNotifierProvider(
+                                                widget.pacienteId)
+                                            .notifier)
+                                        .confirmarAccion(id, aceptar);
+                                  },
+                                );
+                              },
+                            ),
+                ),
+
+                if (state.error != null)
+                  Container(
+                    width: double.infinity,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    color: AppColors.pendingBackground,
+                    child: Text(
+                      state.error!,
+                      style: AppTypography.pequeno().copyWith(
+                        color: AppColors.emergencyRed,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
 
-            // Lista de mensajes o estado inicial amigable
-            Expanded(
-              child: state.cargandoHistorial
-                  ? const Center(child: CircularProgressIndicator())
-                  : state.mensajes.isEmpty
-                      ? _VistaBienvenidaAsistente(
-                          nombrePaciente: widget.pacienteNombre,
-                          sugerencias: _sugerenciasRapidas,
-                          onTapSugerencia: (p) => _enviar(p),
-                        )
-                      : ListView.builder(
-                          controller: _scrollController,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 12,
-                          ),
-                          itemCount: state.mensajes.length +
-                              (state.enviando ? 1 : 0),
-                          itemBuilder: (context, index) {
-                            if (index == state.mensajes.length) {
-                              return const _IndicadorEscribiendo();
-                            }
-                            final msg = state.mensajes[index];
-                            return MensajeBurbujaWidget(
-                              mensaje: msg,
-                              confirmando: state.confirmando,
-                              onConfirmarAccion: (id, aceptar) {
-                                ref
-                                    .read(asistenteNotifierProvider(
-                                            widget.pacienteId)
-                                        .notifier)
-                                    .confirmarAccion(id, aceptar);
-                              },
-                            );
-                          },
-                        ),
-            ),
-
-            if (state.error != null)
-              Container(
-                width: double.infinity,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                color: AppColors.pendingBackground,
-                child: Text(
-                  state.error!,
-                  style: AppTypography.pequeno().copyWith(
-                    color: AppColors.emergencyRed,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-
-            // Chips de acceso rápido cuando ya hay conversación
-            if (state.mensajes.isNotEmpty)
-              SizedBox(
-                height: 50,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  itemCount: _sugerenciasRapidas.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 8),
-                  itemBuilder: (context, idx) {
-                    final item = _sugerenciasRapidas[idx];
-                    return ActionChip(
-                      backgroundColor: Colors.white,
-                      side: const BorderSide(color: AppColors.primaryTeal),
-                      label: Text(
-                        item['label']!,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primaryDark,
-                        ),
+                // Chips de acceso rápido cuando ya hay conversación
+                if (state.mensajes.isNotEmpty)
+                  SizedBox(
+                    height: chipsBarHeight,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
                       ),
-                      onPressed: state.enviando
-                          ? null
-                          : () => _enviar(item['prompt']!),
-                    );
-                  },
-                ),
-              ),
+                      itemCount: _sugerenciasRapidas.length,
+                      separatorBuilder: (_, _) => const SizedBox(width: 8),
+                      itemBuilder: (context, idx) {
+                        final item = _sugerenciasRapidas[idx];
+                        return ActionChip(
+                          backgroundColor: Colors.white,
+                          side: const BorderSide(
+                            color: AppColors.primaryTeal,
+                            width: 1.5,
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          label: Text(
+                            item['label']!,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primaryDark,
+                            ),
+                          ),
+                          onPressed: state.enviando
+                              ? null
+                              : () {
+                                  HapticFeedback.selectionClick();
+                                  _enviar(item['prompt']!);
+                                },
+                        );
+                      },
+                    ),
+                  ),
 
-            // Barra de entrada accesible
-            Container(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                border: Border(
-                  top: BorderSide(color: Color(0xFFE2E8F0), width: 1.5),
-                ),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    child: Semantics(
-                      label: 'Escribe tu pregunta para el asistente de salud',
-                      child: TextField(
-                        controller: _controller,
-                        minLines: 1,
-                        maxLines: 4,
-                        style: AppTypography.cuerpo(),
-                        textInputAction: TextInputAction.send,
-                        onSubmitted: (_) => _enviar(),
-                        decoration: InputDecoration(
-                          hintText: 'Pregúntame sobre tus medicinas o salud...',
-                          hintStyle: AppTypography.pequeno(),
-                          filled: true,
-                          fillColor: AppColors.background,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 14,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(18),
-                            borderSide:
-                                const BorderSide(color: Color(0xFFCBD5E1)),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(18),
-                            borderSide:
-                                const BorderSide(color: Color(0xFFCBD5E1)),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(18),
-                            borderSide: const BorderSide(
-                              color: AppColors.primaryTeal,
-                              width: 2,
+                // Barra de entrada accesible
+                Container(
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    border: Border(
+                      top: BorderSide(color: Color(0xFFE2E8F0), width: 1.5),
+                    ),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        child: Semantics(
+                          label: 'Escribe tu pregunta para el asistente de salud',
+                          child: TextField(
+                            controller: _controller,
+                            focusNode: _focusNode,
+                            minLines: 1,
+                            maxLines: 4,
+                            style: AppTypography.cuerpo(),
+                            textInputAction: TextInputAction.send,
+                            onSubmitted: (_) => _enviar(),
+                            decoration: InputDecoration(
+                              hintText:
+                                  'Pregúntame sobre tus medicinas o salud...',
+                              hintStyle: AppTypography.pequeno(),
+                              filled: true,
+                              fillColor: AppColors.background,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 14,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(18),
+                                borderSide:
+                                    const BorderSide(color: Color(0xFFCBD5E1)),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(18),
+                                borderSide:
+                                    const BorderSide(color: Color(0xFFCBD5E1)),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(18),
+                                borderSide: const BorderSide(
+                                  color: AppColors.primaryTeal,
+                                  width: 2,
+                                ),
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  SizedBox(
-                    width: 56,
-                    height: 56,
-                    child: Semantics(
-                      button: true,
-                      label: 'Enviar mensaje',
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryTeal,
-                          foregroundColor: Colors.white,
-                          padding: EdgeInsets.zero,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18),
+                      const SizedBox(width: 10),
+                      SizedBox(
+                        width: 56,
+                        height: 56,
+                        child: Semantics(
+                          button: true,
+                          label: 'Enviar mensaje',
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primaryTeal,
+                              foregroundColor: Colors.white,
+                              padding: EdgeInsets.zero,
+                              elevation: state.enviando ? 0 : 2,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                            ),
+                            onPressed: state.enviando ? null : () => _enviar(),
+                            child: state.enviando
+                                ? const SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.5,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Icon(Icons.send_rounded, size: 26),
                           ),
                         ),
-                        onPressed: state.enviando ? null : () => _enviar(),
-                        child: const Icon(Icons.send_rounded, size: 26),
                       ),
-                    ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -442,7 +491,10 @@ class _VistaBienvenidaAsistente extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  onPressed: () => onTapSugerencia(item['prompt']!),
+                  onPressed: () {
+                    HapticFeedback.selectionClick();
+                    onTapSugerencia(item['prompt']!);
+                  },
                   child: Text(
                     item['label']!,
                     style: AppTypography.cuerpo().copyWith(
@@ -468,6 +520,7 @@ class _IndicadorEscribiendo extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           const CircleAvatar(
             radius: 18,
@@ -479,33 +532,38 @@ class _IndicadorEscribiendo extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    color: AppColors.primaryTeal,
+          Flexible(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: AppColors.primaryTeal,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  'Revisando tu expediente...',
-                  style: AppTypography.pequeno().copyWith(
-                    color: AppColors.primaryDark,
-                    fontWeight: FontWeight.w600,
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: Text(
+                      'Revisando tu expediente...',
+                      style: AppTypography.pequeno().copyWith(
+                        color: AppColors.primaryDark,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],

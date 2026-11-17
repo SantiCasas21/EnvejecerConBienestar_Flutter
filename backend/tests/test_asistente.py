@@ -183,3 +183,86 @@ def test_asistente_propuesta_y_confirmacion_medicamento_seguro(client, auth_head
     assert conf_res.status_code == 200
     assert 'medicamentos' in conf_res.get_json()['entidades_actualizadas']
     assert Medicamento.query.filter_by(usuario_id=test_user.id, nombre='Vitamina D3').count() == 1
+
+
+def test_asistente_herramientas_adherencia_juegos_contactos(client, auth_headers, test_user):
+    """El asistente puede consultar estadísticas de adherencia, juegos cognitivos y contactos SOS."""
+    tool_resp = {
+        'choices': [
+            {
+                'message': {
+                    'role': 'assistant',
+                    'content': '',
+                    'tool_calls': [
+                        {'id': 'c1', 'type': 'function', 'function': {'name': 'consultar_estadisticas_adherencia', 'arguments': '{"dias": 7}'}},
+                        {'id': 'c2', 'type': 'function', 'function': {'name': 'consultar_actividad_juegos', 'arguments': '{}'}},
+                        {'id': 'c3', 'type': 'function', 'function': {'name': 'consultar_contactos_emergencia', 'arguments': '{}'}},
+                    ],
+                }
+            }
+        ]
+    }
+    final_resp = {
+        'choices': [
+            {'message': {'role': 'assistant', 'content': 'Revisé tu semana, tus juegos y tus contactos de emergencia.'}}
+        ]
+    }
+
+    with patch('app.services.asistente_service.AsistenteService._call_deepseek', side_effect=[tool_resp, final_resp]):
+        res = client.post('/api/asistente/chat', json={'mensaje': '¿Cómo voy esta semana y en mis juegos?'}, headers=auth_headers)
+
+    assert res.status_code == 200
+    assert 'Revisé tu semana' in res.get_json()['respuesta_asistente']['contenido']
+
+
+def test_asistente_propuesta_reabastecer_medicamento(client, auth_headers, test_user):
+    """El asistente puede proponer reabastecer el botiquín y sumarlo al confirmar."""
+    from app.extensions import db
+    med = Medicamento(usuario_id=test_user.id, nombre='Losartán', miligramos='50mg', cantidad_restante=4)
+    db.session.add(med)
+    db.session.commit()
+
+    tool_resp = {
+        'choices': [
+            {
+                'message': {
+                    'role': 'assistant',
+                    'content': '',
+                    'tool_calls': [
+                        {
+                            'id': 'c_reab',
+                            'type': 'function',
+                            'function': {
+                                'name': 'proponer_accion_clinica',
+                                'arguments': json.dumps({
+                                    'tipo': 'reabastecer_medicamento',
+                                    'resumen': 'Sumar 30 pastillas de Losartán a tu botiquín',
+                                    'datos': {'id': med.id, 'cantidad': 30},
+                                }),
+                            },
+                        }
+                    ],
+                }
+            }
+        ]
+    }
+    final_resp = {
+        'choices': [
+            {'message': {'role': 'assistant', 'content': '¿Confirmas sumar 30 unidades de Losartán a tu botiquín?'}}
+        ]
+    }
+
+    with patch('app.services.asistente_service.AsistenteService._call_deepseek', side_effect=[tool_resp, final_resp]):
+        res = client.post('/api/asistente/chat', json={'mensaje': 'Compré 30 pastillas de Losartán'}, headers=auth_headers)
+
+    assert res.status_code == 200
+    msg_id = res.get_json()['respuesta_asistente']['id']
+
+    conf_res = client.post(
+        '/api/asistente/confirmar-accion',
+        json={'mensaje_id': msg_id, 'aceptar': True},
+        headers=auth_headers,
+    )
+    assert conf_res.status_code == 200
+    db.session.refresh(med)
+    assert med.cantidad_restante == 34

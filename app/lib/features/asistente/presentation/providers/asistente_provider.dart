@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../historial/presentation/providers/historial_provider.dart';
+import '../../../historial/presentation/providers/racha_provider.dart';
 import '../../../home/presentation/providers/metas_provider.dart';
 import '../../../medicamentos/presentation/providers/medicamentos_provider.dart';
 import '../../../medicamentos/presentation/providers/tratamientos_provider.dart';
@@ -65,15 +67,23 @@ class AsistenteNotifier extends StateNotifier<AsistenteState> {
     if (entidades.isEmpty) return;
     if (entidades.contains('medicamentos')) {
       _ref.invalidate(medicamentosNotifierProvider);
+      _ref.invalidate(rachaNotifierProvider);
     }
     if (entidades.contains('tratamientos')) {
       _ref.invalidate(tratamientosNotifierProvider);
     }
     if (entidades.contains('metas')) {
       _ref.invalidate(metasNotifierProvider);
+      _ref.invalidate(rachaNotifierProvider);
     }
     if (entidades.contains('perfil')) {
       _ref.invalidate(perfilNotifierProvider);
+    }
+    if (entidades.contains('historial')) {
+      _ref.invalidate(historialTomasProvider);
+      _ref.invalidate(resumenAdherenciaProvider);
+      _ref.invalidate(historialHabitosProvider);
+      _ref.invalidate(rachaNotifierProvider);
     }
   }
 

@@ -12,6 +12,9 @@ from app.services.medicamento_service import MedicamentoService
 from app.services.tratamiento_service import TratamientoService
 from app.services.meta_service import MetaService
 from app.services.perfil_service import PerfilService
+from app.services.historial_service import HistorialService
+from app.services.juego_service import JuegoService
+from app.services.contacto_service import ContactoService
 
 
 class AsistenteService:
@@ -154,6 +157,38 @@ class AsistenteService:
             {
                 'type': 'function',
                 'function': {
+                    'name': 'consultar_estadisticas_adherencia',
+                    'description': 'Consulta el historial real de tomas, porcentaje de adherencia semanal o mensual, hábitos cumplidos y racha de días consecutivos.',
+                    'parameters': {
+                        'type': 'object',
+                        'properties': {
+                            'dias': {
+                                'type': 'integer',
+                                'description': 'Ventana de días a consultar (por defecto 7 para la semana, o 30 para el mes).',
+                            }
+                        },
+                    },
+                },
+            },
+            {
+                'type': 'function',
+                'function': {
+                    'name': 'consultar_actividad_juegos',
+                    'description': 'Consulta el progreso y puntajes del paciente en los mini juegos cognitivos (Sudoku, Sopa de Letras, Pares).',
+                    'parameters': {'type': 'object', 'properties': {}},
+                },
+            },
+            {
+                'type': 'function',
+                'function': {
+                    'name': 'consultar_contactos_emergencia',
+                    'description': 'Consulta la agenda de contactos familiares y contactos de emergencia SOS del paciente.',
+                    'parameters': {'type': 'object', 'properties': {}},
+                },
+            },
+            {
+                'type': 'function',
+                'function': {
                     'name': 'marcar_toma_medicamento',
                     'description': 'Marca como tomada o pendiente una medicina existente del paciente para el día de hoy.',
                     'parameters': {
@@ -200,10 +235,12 @@ class AsistenteService:
                                 'enum': [
                                     'crear_medicamento',
                                     'actualizar_medicamento',
+                                    'reabastecer_medicamento',
                                     'crear_tratamiento',
                                     'actualizar_tratamiento',
                                     'actualizar_alergias_perfil',
                                     'crear_habito',
+                                    'actualizar_habito',
                                 ],
                                 'description': 'Tipo de acción a confirmar por el usuario.',
                             },
@@ -216,9 +253,10 @@ class AsistenteService:
                                 'description': (
                                     'Campos exactos según el tipo. Para crear_medicamento: nombre, miligramos, frecuencia (int horas), '
                                     'hora_alarma (HH:MM), cantidad_restante (int), notas. Para actualizar_medicamento: id + campos a cambiar. '
+                                    'Para reabastecer_medicamento: id (int medicamento), cantidad (int unidades a sumar al botiquín). '
                                     'Para crear_tratamiento: diagnostico, especialidad_medica, medico_tratante, es_cronico (bool), proxima_cita (YYYY-MM-DD), recomendaciones. '
                                     'Para actualizar_tratamiento: id + campos. Para actualizar_alergias_perfil: alergias, condiciones, restricciones_alimentarias. '
-                                    'Para crear_habito: nombre, objetivo (int), unidad, icono.'
+                                    'Para crear_habito: nombre, objetivo (int), unidad, icono. Para actualizar_habito: id + campos (nombre, objetivo, unidad, icono).'
                                 ),
                             },
                         },
@@ -276,6 +314,32 @@ class AsistenteService:
                 f"  - Hábito/Meta [ID: {meta['id']}]: {meta['nombre']} ({meta['progreso']}/{meta['objetivo']} {meta.get('unidad', '')})"
             )
 
+        # Enriquecer con racha actual, alertas de botiquín y contactos SOS
+        try:
+            racha_info = HistorialService.calcular_racha(paciente_id)
+            referencias.append(
+                f"  - Racha actual de constancia: {racha_info.get('racha_actual', 0)} días "
+                f"(hoy activo: {'Sí' if racha_info.get('activo_hoy') else 'Aún no'})"
+            )
+        except Exception:
+            pass
+
+        bajos = [
+            f"{m['nombre']} ({m.get('cantidad_restante', 0)} restantes)"
+            for m in todos_meds
+            if (m.get('cantidad_restante') or 0) <= (m.get('umbral_alerta') or 5)
+        ]
+        if bajos:
+            referencias.append(f"  - ⚠️ Medicamentos con stock bajo en botiquín: {', '.join(bajos)}")
+
+        try:
+            contactos_sos = ContactoService.get_emergencia(paciente_id)
+            if contactos_sos:
+                sos_str = ', '.join(f"{c.nombre} ({c.parentesco or 'Contacto'}: {c.telefono})" for c in contactos_sos)
+                referencias.append(f"  - Contactos de Emergencia SOS: {sos_str}")
+        except Exception:
+            pass
+
         medico = exp.get('perfil_medico', {}).get('medico_tratante') or 'su médico tratante'
         rol_usuario = 'un cuidador familiar autorizado' if es_cuidador else 'el paciente adulto mayor'
 
@@ -312,6 +376,54 @@ REGLAS ESTRICTAS DE DELIMITACIÓN Y SEGURIDAD CLÍNICA:
         if nombre_tool == 'consultar_prediccion_adherencia':
             res = ExpedienteService.predecir_adherencia_ml(paciente_id)
             return json.dumps(res, ensure_ascii=False)
+
+        if nombre_tool == 'consultar_estadisticas_adherencia':
+            dias = int(args.get('dias', 7) or 7)
+            dias = max(1, min(dias, 90))
+            resumen = HistorialService.obtener_resumen_adherencia(paciente_id, dias=dias)
+            racha = HistorialService.calcular_racha(paciente_id)
+            return json.dumps(
+                {
+                    'dias_analizados': dias,
+                    'porcentaje_adherencia_global': resumen.get('porcentaje_adherencia_global', 0),
+                    'total_tomas_programadas': resumen.get('total_tomas_programadas', 0),
+                    'tomas_completadas': resumen.get('tomas_completadas', 0),
+                    'tomas_omitidas': resumen.get('tomas_omitidas', 0),
+                    'habitos_cumplidos_hoy': resumen.get('habitos_cumplidos_hoy', 0),
+                    'total_habitos_hoy': resumen.get('total_habitos_hoy', 0),
+                    'racha_actual_dias': racha.get('racha_actual', 0),
+                    'mensaje_racha': racha.get('mensaje_racha', ''),
+                },
+                ensure_ascii=False,
+            )
+
+        if nombre_tool == 'consultar_actividad_juegos':
+            stats = JuegoService.get_estadisticas(paciente_id)
+            por_juego = JuegoService.get_puntos_por_juego(paciente_id)
+            return json.dumps(
+                {'estadisticas': stats, 'detalle_por_juego': por_juego},
+                ensure_ascii=False,
+            )
+
+        if nombre_tool == 'consultar_contactos_emergencia':
+            contactos = ContactoService.get_all(paciente_id)
+            return json.dumps(
+                {
+                    'total_contactos': len(contactos),
+                    'contactos': [
+                        {
+                            'id': c.id,
+                            'nombre': c.nombre,
+                            'parentesco': c.parentesco,
+                            'telefono': c.telefono,
+                            'es_emergencia': bool(c.es_emergencia),
+                            'es_favorito': bool(c.es_favorito),
+                        }
+                        for c in contactos
+                    ],
+                },
+                ensure_ascii=False,
+            )
 
         if nombre_tool == 'marcar_toma_medicamento':
             med_id = int(args.get('medicamento_id', 0))
@@ -532,6 +644,14 @@ REGLAS ESTRICTAS DE DELIMITACIÓN Y SEGURIDAD CLÍNICA:
             if not MedicamentoService.update(med_id, datos, paciente_id):
                 raise ValueError('No se encontró el medicamento a actualizar.')
             entidades.append('medicamentos')
+        elif tipo == 'reabastecer_medicamento':
+            med_id = int(datos.get('id', 0))
+            cantidad = int(datos.get('cantidad', 0))
+            if cantidad <= 0:
+                raise ValueError('La cantidad a reabastecer debe ser mayor a 0.')
+            if not MedicamentoService.reabastecer(med_id, cantidad, paciente_id):
+                raise ValueError('No se encontró el medicamento a reabastecer.')
+            entidades.append('medicamentos')
         elif tipo == 'crear_tratamiento':
             TratamientoService.create(datos, paciente_id)
             entidades.append('tratamientos')
@@ -548,6 +668,11 @@ REGLAS ESTRICTAS DE DELIMITACIÓN Y SEGURIDAD CLÍNICA:
             datos.setdefault('unidad', 'veces')
             datos.setdefault('icono', '🌿')
             MetaService.create(datos, paciente_id)
+            entidades.append('metas')
+        elif tipo == 'actualizar_habito':
+            meta_id = int(datos.pop('id', 0))
+            if not MetaService.update(meta_id, datos, paciente_id):
+                raise ValueError('No se encontró el hábito a actualizar.')
             entidades.append('metas')
         else:
             raise ValueError(f'Tipo de acción no soportado: {tipo}')

@@ -95,7 +95,7 @@ void main() {
 
   testWidgets('AsistenteScreen envía mensaje y muestra alerta preventiva ámbar',
       (WidgetTester tester) async {
-    tester.view.physicalSize = const Size(360, 700);
+    tester.view.physicalSize = const Size(360, 1000);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
 
