@@ -11,6 +11,7 @@ from .perfil import bp as perfil_bp
 from .cuidadores import bp as cuidadores_bp
 from .expediente import bp as expediente_bp
 from .historial import bp as historial_bp
+from .asistente import bp as asistente_bp
 
 def register_blueprints(app: Flask) -> None:
     """Registra todos los blueprints en la aplicación."""
@@ -25,3 +26,4 @@ def register_blueprints(app: Flask) -> None:
     app.register_blueprint(cuidadores_bp, url_prefix='/api/cuidadores')
     app.register_blueprint(expediente_bp, url_prefix='/api/expediente-clinico')
     app.register_blueprint(historial_bp, url_prefix='/api/historial')
+    app.register_blueprint(asistente_bp, url_prefix='/api/asistente')

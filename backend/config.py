@@ -13,6 +13,9 @@ class Config:
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'jwt-dev-secret-key'
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
+    DEEPSEEK_API_KEY = os.environ.get('DEEPSEEK_API_KEY', '')
+    DEEPSEEK_MODEL = os.environ.get('DEEPSEEK_MODEL', 'deepseek-chat')
+    DEEPSEEK_BASE_URL = os.environ.get('DEEPSEEK_BASE_URL', 'https://api.deepseek.com')
 
 class DevelopmentConfig(Config):
     """Configuración de desarrollo conectada primariamente a PostgreSQL (persistencia real)."""

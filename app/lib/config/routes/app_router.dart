@@ -22,6 +22,7 @@ import '../../features/contactos/presentation/screens/contacto_detail_screen.dar
 import '../../features/perfil/presentation/screens/perfil_screen.dart';
 import '../../features/perfil/presentation/screens/editar_perfil_screen.dart';
 import '../../features/historial/presentation/screens/historial_screen.dart';
+import '../../features/asistente/presentation/screens/asistente_screen.dart';
 
 part 'app_router.g.dart';
 
@@ -107,6 +108,18 @@ GoRouter goRouter(Ref ref) {
             pacienteId: pacienteId != null ? int.tryParse(pacienteId) : null,
             fechaInicial: fecha,
             tabInicial: tab != null ? int.tryParse(tab) ?? 0 : 0,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/asistente',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final pacienteId = state.uri.queryParameters['paciente_id'];
+          final nombre = state.uri.queryParameters['nombre'];
+          return AsistenteScreen(
+            pacienteId: pacienteId != null ? int.tryParse(pacienteId) : null,
+            pacienteNombre: nombre,
           );
         },
       ),

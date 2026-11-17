@@ -1042,6 +1042,32 @@ class _CuidadorDashboardScreenState
               ],
             ),
             const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton.icon(
+                onPressed: () => context.push(
+                  '/asistente?paciente_id=${p.id}&nombre=${Uri.encodeComponent(p.nombre)}',
+                ),
+                icon: const Icon(Icons.health_and_safety_rounded, size: 20),
+                label: const Text(
+                  '🤖 Asistente IA y Alergias del Paciente',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'Nunito',
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryDark,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
 
             // Botones Secundarios: Ficha Clínica, WhatsApp y Llamada
             Row(

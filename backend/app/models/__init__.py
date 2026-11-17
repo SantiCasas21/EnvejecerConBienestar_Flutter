@@ -9,3 +9,4 @@ from .meta import Meta
 from .perfil import PerfilUsuario
 from .cuidador_paciente import CuidadorPaciente
 from .historial_toma import HistorialToma
+from .mensaje_ia import MensajeIA

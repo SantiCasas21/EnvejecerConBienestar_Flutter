@@ -5,4 +5,5 @@ class ApiEndpoints {
   static const String juegos = '/juegos';
   static const String cuidadores = '/cuidadores';
   static const String historial = '/historial';
+  static const String asistente = '/asistente';
 }

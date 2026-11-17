@@ -176,27 +176,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final perfil = ref.read(perfilNotifierProvider).value;
 
     String? telefonoSOS = perfil?.contactoEmergenciaTelefono;
+    String? nombreSOS = perfil?.contactoEmergenciaNombre;
     if (telefonoSOS == null || telefonoSOS.isEmpty) {
       final sos = contactos.where((c) => c.esEmergencia).firstOrNull;
       telefonoSOS = sos?.telefono;
+      nombreSOS ??= sos?.nombre;
     }
 
-    if (telefonoSOS != null && telefonoSOS.isNotEmpty) {
-      await CallService.realizarLlamada(telefonoSOS);
-    } else {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text(
-            '⚠️ No tienes un contacto de emergencia configurado. Agrégalo en tu Perfil o Contactos.',
-            style: TextStyle(fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          backgroundColor: AppColors.emergencyRed,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
-    }
+    await CallService.iniciarSosConRespaldo(
+      context,
+      telefonoContacto: telefonoSOS,
+      nombreContacto: nombreSOS,
+    );
   }
 
   void _abrirAddMeta(BuildContext context, WidgetRef ref) async {
@@ -605,6 +596,74 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         // Mini Resumen de Hábitos del Día
         _buildResumenHabitosHoy(metasAsync),
         const SizedBox(height: 20),
+
+        // Acceso directo al Asistente de Salud IA (Módulo 9)
+        InkWell(
+          onTap: () => context.push('/asistente'),
+          borderRadius: BorderRadius.circular(18),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.primaryTeal,
+                  AppColors.primaryDark,
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primaryTeal.withValues(alpha: 0.25),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: const Row(
+              children: [
+                CircleAvatar(
+                  radius: 22,
+                  backgroundColor: Colors.white,
+                  child: Icon(
+                    Icons.health_and_safety_rounded,
+                    color: AppColors.primaryTeal,
+                    size: 26,
+                  ),
+                ),
+                SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Asistente de Salud IA',
+                        style: TextStyle(
+                          fontFamily: 'Nunito',
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Revisa alergias, medicinas o prepara tu cita',
+                        style: TextStyle(
+                          fontFamily: 'Nunito',
+                          fontSize: 14,
+                          color: Color(0xFFCCFBF1),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.arrow_forward_ios_rounded, size: 18, color: Colors.white),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
 
         // Acceso directo al Historial
         InkWell(
