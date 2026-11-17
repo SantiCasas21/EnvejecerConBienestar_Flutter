@@ -27,7 +27,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Exponer puerto
-EXPOSE 5000
+EXPOSE 8080
 
-# Comando por defecto: ejecutar con gunicorn en producción
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--timeout", "120", "run:app"]
+# Comando por defecto: ejecutar con gunicorn en producción (compatible con $PORT de Cloud Run)
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 2 --threads 4 --timeout 120 run:app"]
