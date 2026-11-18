@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_typography.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/google_auth_button.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -209,7 +210,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
+
+                  // Acceso rápido con Google
+                  GoogleAuthButton(
+                    label: 'Continuar con Google',
+                    loading: authState.status == AuthStatus.loading,
+                    onPressed: () async {
+                      final ok = await ref
+                          .read(authNotifierProvider.notifier)
+                          .loginWithGoogle();
+                      if (ok && mounted) {
+                        context.go('/');
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 20),
 
                   // Botón para ir a Registro
                   OutlinedButton(

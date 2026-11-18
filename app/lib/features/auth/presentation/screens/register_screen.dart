@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../config/theme/app_colors.dart';
 import '../../../../config/theme/app_typography.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/google_auth_button.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -313,6 +314,39 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: 22),
+
+                // Opción rápida: Registrarse con Google usando el rol elegido
+                GoogleAuthButton(
+                  label: 'Registrarse con Google',
+                  loading: authState.status == AuthStatus.loading,
+                  onPressed: () async {
+                    final ok = await ref
+                        .read(authNotifierProvider.notifier)
+                        .loginWithGoogle(rol: _rolSeleccionado);
+                    if (ok && mounted) {
+                      context.go('/');
+                    }
+                  },
+                ),
+                const SizedBox(height: 18),
+                const Row(
+                  children: [
+                    Expanded(child: Divider(color: AppColors.border)),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      child: Text(
+                        'o con tu correo',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                    Expanded(child: Divider(color: AppColors.border)),
+                  ],
+                ),
+                const SizedBox(height: 18),
 
                 // Nombre completo
                 TextFormField(

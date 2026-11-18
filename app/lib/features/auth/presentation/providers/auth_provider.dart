@@ -149,6 +149,41 @@ class AuthNotifier extends _$AuthNotifier {
     }
   }
 
+  Future<bool> loginWithGoogle({String rol = 'adulto_mayor'}) async {
+    state = state.copyWith(status: AuthStatus.loading, errorMessage: null);
+    try {
+      final user = await ref
+          .read(authRepositoryProvider)
+          .loginWithGoogle(rol: rol);
+      if (user == null) {
+        state = AuthState(status: AuthStatus.unauthenticated);
+        return false;
+      }
+      state = AuthState(status: AuthStatus.authenticated, user: user, errorMessage: null);
+      return true;
+    } on DioException catch (e) {
+      String mensaje = 'No se pudo completar el acceso con Google.';
+      if (e.response?.data is Map && e.response?.data['msg'] != null) {
+        mensaje = e.response?.data['msg'];
+      }
+      state = AuthState(
+        status: AuthStatus.unauthenticated,
+        errorMessage: mensaje,
+      );
+      return false;
+    } catch (e) {
+      final msgStr = e.toString().toLowerCase();
+      final cancelado = msgStr.contains('cancel') || msgStr.contains('popup-closed');
+      state = AuthState(
+        status: AuthStatus.unauthenticated,
+        errorMessage: cancelado
+            ? null
+            : 'No se pudo iniciar sesión con Google. Intenta nuevamente.',
+      );
+      return false;
+    }
+  }
+
   Future<void> logout() async {
     await ref.read(authRepositoryProvider).logout();
     state = AuthState(status: AuthStatus.unauthenticated, user: null);

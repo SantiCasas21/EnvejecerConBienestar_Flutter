@@ -1,4 +1,19 @@
 {
+  "auth": {
+    "providers": {
+      "emailPassword": true,
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "Envejecer con Bienestar",
+        "supportEmail": "casassantiago1@gmail.com",
+        "authorizedRedirectUris": [
+          "https://envejecerconbienestar-4ffb7.firebaseapp.com/__/auth/handler",
+          "https://envejecerconbienestar.web.app/__/auth/handler",
+          "https://envejecerconbienestar-4ffb7.web.app/__/auth/handler",
+          "http://localhost"
+        ]
+      }
+    }
+  },
   "hosting": [
     {
       "site": "envejecerconbienestar",
