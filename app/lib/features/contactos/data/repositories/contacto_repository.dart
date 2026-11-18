@@ -39,6 +39,19 @@ class ContactoRepository {
     final response = await _dio.get('/contactos/emergencia');
     return (response.data as List).map((json) => Contacto.fromJson(json)).toList();
   }
+
+  Future<Map<String, dynamic>> sincronizarContactos(List<Map<String, dynamic>> contactos) async {
+    final response = await _dio.post('/contactos/sincronizar', data: {'contactos': contactos});
+    final data = response.data as Map<String, dynamic>;
+    final creados = (data['creados'] as List? ?? [])
+        .map((json) => Contacto.fromJson(json as Map<String, dynamic>))
+        .toList();
+    return {
+      'creados': creados,
+      'total_creados': data['total_creados'] ?? creados.length,
+      'omitidos_duplicados': data['omitidos_duplicados'] ?? 0,
+    };
+  }
 }
 
 @riverpod

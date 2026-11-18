@@ -33,4 +33,16 @@ class ContactosNotifier extends _$ContactosNotifier {
       state.value?.where((c) => c.id != id).toList() ?? [],
     );
   }
+
+  Future<Map<String, int>> sincronizarDesdeTelefono(List<Map<String, dynamic>> contactos) async {
+    final res = await ref.read(contactoRepositoryProvider).sincronizarContactos(contactos);
+    final creados = (res['creados'] as List<Contacto>?) ?? [];
+    if (creados.isNotEmpty) {
+      state = AsyncValue.data([...creados, ...?state.value]);
+    }
+    return {
+      'creados': (res['total_creados'] as int?) ?? creados.length,
+      'omitidos': (res['omitidos_duplicados'] as int?) ?? 0,
+    };
+  }
 }

@@ -73,3 +73,21 @@ def get_contactos_emergencia():
     usuario_id = int(get_jwt_identity())
     contactos = ContactoService.get_emergencia(usuario_id)
     return jsonify(schema_many.dump(contactos)), 200
+
+
+@bp.route('/sincronizar', methods=['POST'])
+@jwt_required()
+def sincronizar_contactos():
+    """Importa y sincroniza múltiples contactos desde la agenda del teléfono."""
+    usuario_id = int(get_jwt_identity())
+    data = request.get_json(silent=True) or {}
+    items = data.get('contactos')
+    if not isinstance(items, list):
+        return jsonify({"msg": "El campo 'contactos' debe ser una lista."}), 400
+
+    res = ContactoService.sincronizar_lote(items, usuario_id)
+    return jsonify({
+        "creados": schema_many.dump(res['creados']),
+        "total_creados": len(res['creados']),
+        "omitidos_duplicados": res['omitidos'],
+    }), 201

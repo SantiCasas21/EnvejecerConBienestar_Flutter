@@ -69,14 +69,15 @@ class _AddContactoDialogState extends State<AddContactoDialog> {
               const Text(
                 '👤 Agregar Contacto',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.contactsBlue),
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.primaryDark),
               ),
               const SizedBox(height: 12),
               OutlinedButton.icon(
                 onPressed: _importarNativo,
-                icon: const Icon(Icons.contacts, color: AppColors.contactsBlue),
-                label: const Text('Importar de la Agenda del Teléfono', style: TextStyle(fontSize: 16)),
+                icon: const Icon(Icons.contacts, color: AppColors.primaryTeal),
+                label: const Text('Importar de la Agenda del Teléfono', style: TextStyle(fontSize: 16, color: AppColors.primaryDark, fontWeight: FontWeight.w600)),
                 style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.primaryTeal, width: 1.5),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
@@ -136,7 +137,7 @@ class _AddContactoDialogState extends State<AddContactoDialog> {
                 child: ElevatedButton(
                   onPressed: _guardar,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.contactsBlue,
+                    backgroundColor: AppColors.primaryTeal,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                   child: const Text('Guardar Contacto', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),

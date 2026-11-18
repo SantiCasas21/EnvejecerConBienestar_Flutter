@@ -53,3 +53,42 @@ class ContactoService:
     def get_emergencia(usuario_id: int) -> List[Contacto]:
         """Obtiene los contactos de emergencia de un usuario."""
         return Contacto.query.filter_by(usuario_id=usuario_id, es_emergencia=True).all()
+
+    @staticmethod
+    def sincronizar_lote(items: List[Dict[str, Any]], usuario_id: int) -> Dict[str, Any]:
+        """Sincroniza una lista de contactos desde la agenda del teléfono evitando duplicados por teléfono."""
+        existentes = ContactoService.get_all(usuario_id)
+        telefonos_existentes = {
+            ''.join(ch for ch in (c.telefono or '') if ch.isdigit())[-10:]
+            for c in existentes
+            if c.telefono
+        }
+
+        creados: List[Contacto] = []
+        omitidos = 0
+        for item in items:
+            nombre = (item.get('nombre') or '').strip()
+            telefono = (item.get('telefono') or '').strip()
+            digitos = ''.join(ch for ch in telefono if ch.isdigit())[-10:]
+            if not nombre or not digitos or digitos in telefonos_existentes:
+                omitidos += 1
+                continue
+
+            contacto = Contacto(
+                usuario_id=usuario_id,
+                nombre=nombre[:100],
+                telefono=telefono[:20],
+                ubicacion=(item.get('ubicacion') or '')[:200],
+                categoria=(item.get('categoria') or 'Familia/Amigos')[:50],
+                icono=(item.get('icono') or '👤')[:20],
+                es_favorito=bool(item.get('es_favorito', False)),
+                es_emergencia=bool(item.get('es_emergencia', False)),
+            )
+            db.session.add(contacto)
+            creados.append(contacto)
+            telefonos_existentes.add(digitos)
+
+        if creados:
+            db.session.commit()
+
+        return {'creados': creados, 'omitidos': omitidos}
