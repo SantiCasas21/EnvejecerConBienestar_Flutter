@@ -162,7 +162,7 @@ class _CuidadorDashboardScreenState
                         color: AppColors.primaryTeal,
                       ),
                       decoration: InputDecoration(
-                        labelText: 'Código del Adulto Mayor',
+                        labelText: 'Código del Paciente',
                         hintText: 'Ej: ECB-1001',
                         border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(14)),
@@ -623,7 +623,7 @@ class _CuidadorDashboardScreenState
                         onPressed: _mostrarDialogoVincular,
                         icon: const Icon(Icons.add_link_rounded, size: 22),
                         label: const Text(
-                          'Vincular Nuevo Adulto Mayor',
+                          'Vincular Nuevo Paciente',
                           style: TextStyle(
                               fontSize: 16, fontWeight: FontWeight.bold),
                         ),
@@ -709,7 +709,7 @@ class _CuidadorDashboardScreenState
                             ),
                             const SizedBox(height: 6),
                             const Text(
-                              'Pídele a tu familiar adulto mayor su código (ej: ECB-1001) para comenzar a supervisar su salud.',
+                              'Pídele a tu paciente o familiar su código (ej: ECB-1001) para comenzar a supervisar su salud.',
                               style: TextStyle(
                                   fontSize: 14, color: AppColors.textSecondary),
                               textAlign: TextAlign.center,

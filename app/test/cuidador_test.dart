@@ -320,12 +320,12 @@ void main() {
       // Verificar textos y títulos visibles
       expect(find.text('Crear Cuenta'), findsOneWidget);
       expect(find.text('¿Cuál es tu rol?'), findsOneWidget);
-      expect(find.text('Soy Adulto Mayor'), findsOneWidget);
+      expect(find.text('Soy Paciente / Usuario'), findsOneWidget);
       expect(find.text('Soy Familiar o Cuidador'), findsOneWidget);
 
       // Validar regla de accesibilidad: tarjetas de selección táctil >= 56dp de alto
       final finderAdultoMayor = find.ancestor(
-        of: find.text('Soy Adulto Mayor'),
+        of: find.text('Soy Paciente / Usuario'),
         matching: find.byType(InkWell),
       );
       expect(finderAdultoMayor, findsOneWidget);
@@ -367,7 +367,7 @@ void main() {
       // Verificar cabecera cálida
       expect(find.text('¡Bienvenido/a Cuidador/a!'), findsOneWidget);
       expect(find.text('👤 Tus Datos Básicos'), findsOneWidget);
-      expect(find.text('🔗 Vincular Adulto Mayor'), findsOneWidget);
+      expect(find.text('🔗 Vincular Paciente'), findsOneWidget);
 
       // Verificar que el nombre inicial esté prellenado en el formulario
       expect(find.text('María Cuidadora'), findsOneWidget);

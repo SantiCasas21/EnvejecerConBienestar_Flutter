@@ -35,7 +35,7 @@ class CuidadorService:
         # Buscar paciente por código
         paciente = Usuario.query.filter_by(codigo_vinculacion=codigo_limpio).first()
         if not paciente:
-            raise LookupError(f"No encontramos ningún adulto mayor registrado con el código '{codigo_limpio}'.")
+            raise LookupError(f"No encontramos ningún paciente registrado con el código '{codigo_limpio}'.")
 
         if paciente.id == cuidador_id:
             raise ValueError("No puedes vincularte a ti mismo como paciente.")

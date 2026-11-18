@@ -101,7 +101,7 @@ def test_vincular_paciente_codigo_inexistente(client):
     })
     assert response.status_code == 404
     data = response.get_json()
-    assert 'No encontramos ningún adulto mayor' in data['msg']
+    assert 'No encontramos ningún paciente' in data['msg']
 
 
 def test_prevenir_vinculacion_duplicada(client):

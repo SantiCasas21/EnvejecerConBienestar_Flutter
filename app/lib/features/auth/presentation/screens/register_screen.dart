@@ -179,7 +179,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           ),
                           child: Center(
                             child: Text(
-                              '👴',
+                              '👤',
                               style: TextStyle(
                                 fontSize: 24,
                                 color: _rolSeleccionado == 'adulto_mayor'
@@ -195,7 +195,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Soy Adulto Mayor',
+                                'Soy Paciente / Usuario',
                                 style: AppTypography.cuerpo().copyWith(
                                   fontSize: 19,
                                   fontWeight: FontWeight.bold,

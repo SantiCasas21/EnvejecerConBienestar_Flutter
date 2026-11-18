@@ -262,9 +262,9 @@ class _BienvenidaCuidadorDialogState
                 ),
                 const SizedBox(height: 22),
 
-                // ── SECCIÓN 2: VINCULACIÓN DEL ADULTO MAYOR ──
+                // ── SECCIÓN 2: VINCULACIÓN DEL PACIENTE ──
                 Text(
-                  '🔗 Vincular Adulto Mayor',
+                  '🔗 Vincular Paciente',
                   style: AppTypography.subtitulo().copyWith(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -304,7 +304,7 @@ class _BienvenidaCuidadorDialogState
                       ),
                       const SizedBox(height: 6),
                       const Text(
-                        'El adulto mayor puede ver su código único (ej: ECB-1001) en la pantalla de su perfil.',
+                        'El paciente puede ver su código único (ej: ECB-1001) en la pantalla de su perfil.',
                         style: TextStyle(
                             fontSize: 14, color: AppColors.textSecondary),
                       ),
