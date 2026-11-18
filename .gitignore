@@ -68,4 +68,26 @@ ia/
 ia
 scratch/
 
+# ──────────────────────────────
+# Firebase, Secretos y Llaves
+# ──────────────────────────────
 .firebase/
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+app/lib/firebase_options.dart
+**/google-services.json
+**/GoogleService-Info.plist
+*firebase-adminsdk*.json
+*service-account*.json
+cloudrun_env*.yaml
+*.jks
+*.keystore
+app/android/key.properties
+*.p8
+*.p12
+*.pem
+*.key

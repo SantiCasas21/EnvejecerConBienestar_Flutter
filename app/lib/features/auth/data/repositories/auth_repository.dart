@@ -1,11 +1,14 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:envejecer_con_bienestar/core/network/api_client.dart';
 import 'package:envejecer_con_bienestar/core/storage/secure_storage_service.dart';
+import '../../../../firebase_options.dart';
 import '../models/usuario_model.dart';
 
 part 'auth_repository.g.dart';
@@ -15,6 +18,22 @@ class AuthRepository {
   final SecureStorageService _storageService;
 
   AuthRepository(this._dio, this._storageService);
+
+  Future<void> _guardarUsuarioEnCache(UsuarioModel user) async {
+    try {
+      await _storageService.saveUserJson(jsonEncode(user.toJson()));
+    } catch (_) {}
+  }
+
+  Future<UsuarioModel?> getCachedUser() async {
+    try {
+      final raw = await _storageService.getUserJson();
+      if (raw == null || raw.isEmpty) return null;
+      return UsuarioModel.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
+  }
 
   Future<UsuarioModel> login(String email, String password) async {
     final response = await _dio.post(
@@ -31,7 +50,9 @@ class AuthRepository {
       refreshToken: data['refresh_token'],
     );
 
-    return UsuarioModel.fromJson(data['usuario']);
+    final user = UsuarioModel.fromJson(data['usuario']);
+    await _guardarUsuarioEnCache(user);
+    return user;
   }
 
   Future<UsuarioModel> register(
@@ -58,10 +79,18 @@ class AuthRepository {
       );
     }
 
-    return UsuarioModel.fromJson(data['usuario']);
+    final user = UsuarioModel.fromJson(data['usuario']);
+    await _guardarUsuarioEnCache(user);
+    return user;
   }
 
   Future<UsuarioModel?> loginWithGoogle({String rol = 'adulto_mayor'}) async {
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    }
+
     UserCredential? userCredential;
     if (kIsWeb) {
       final provider = GoogleAuthProvider();
@@ -95,19 +124,20 @@ class AuthRepository {
       refreshToken: data['refresh_token'],
     );
 
-    return UsuarioModel.fromJson(data['usuario']);
+    final user = UsuarioModel.fromJson(data['usuario']);
+    await _guardarUsuarioEnCache(user);
+    return user;
   }
 
+  /// Retorna el usuario del backend. Lanza DioException si fue 401/422 para distinguir de errores de red.
   Future<UsuarioModel?> getMe() async {
-    try {
-      final response = await _dio.get('/auth/me');
-      if (response.data != null && response.data['usuario'] != null) {
-        return UsuarioModel.fromJson(response.data['usuario']);
-      }
-      return null;
-    } on DioException {
-      return null;
+    final response = await _dio.get('/auth/me');
+    if (response.data != null && response.data['usuario'] != null) {
+      final user = UsuarioModel.fromJson(response.data['usuario']);
+      await _guardarUsuarioEnCache(user);
+      return user;
     }
+    return null;
   }
 
   Future<void> logout() async {
@@ -115,7 +145,9 @@ class AuthRepository {
       if (!kIsWeb) {
         await GoogleSignIn.instance.signOut();
       }
-      await FirebaseAuth.instance.signOut();
+      if (Firebase.apps.isNotEmpty) {
+        await FirebaseAuth.instance.signOut();
+      }
     } catch (_) {}
     await _storageService.clearTokens();
   }

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../data/models/actividad_cognitiva_model.dart';
 import '../../data/models/juego_ficha_model.dart';
 import '../../data/repositories/juegos_repository.dart';
@@ -9,6 +10,7 @@ import '../../data/repositories/juego_repository.dart';
 
 /// Proveedor para el historial reciente de partidas del usuario
 final historialJuegosProvider = FutureProvider<List<ActividadCognitiva>>((ref) async {
+  ref.watch(authNotifierProvider.select((s) => s.user?.id));
   final repo = ref.watch(juegoRepositoryProvider);
   return repo.getHistorial();
 });
@@ -32,30 +34,35 @@ class HistorialParams {
 
 /// Proveedor de historial filtrable por días y por círculo familiar
 final historialFiltradoProvider = FutureProvider.family<List<ActividadCognitiva>, HistorialParams>((ref, params) async {
+  ref.watch(authNotifierProvider.select((s) => s.user?.id));
   final repo = ref.watch(juegoRepositoryProvider);
   return repo.getHistorial(dias: params.dias, familiar: params.familiar);
 });
 
 /// Proveedor de los 5 minijuegos ordenados por puntos acumulados
 final puntosPorJuegoProvider = FutureProvider<List<PuntosPorJuegoModel>>((ref) async {
+  ref.watch(authNotifierProvider.select((s) => s.user?.id));
   final repo = ref.watch(juegoRepositoryProvider);
   return repo.getPuntosPorJuego();
 });
 
 /// Proveedor del Top 3 (o personalizado) con copitas, filtrable por tipo de juego
 final mejoresPuntajesProvider = FutureProvider.family<List<ActividadCognitiva>, String?>((ref, tipoJuego) async {
+  ref.watch(authNotifierProvider.select((s) => s.user?.id));
   final repo = ref.watch(juegoRepositoryProvider);
   return repo.getMejoresPuntajes(tipoJuego: tipoJuego, limite: 3);
 });
 
 /// Proveedor de estadísticas generales (puntos totales, partidas, récord)
 final estadisticasJuegosProvider = FutureProvider<EstadisticasJuegosModel>((ref) async {
+  ref.watch(authNotifierProvider.select((s) => s.user?.id));
   final repo = ref.watch(juegoRepositoryProvider);
   return repo.getEstadisticas();
 });
 
 /// Proveedor de podio familiar por tipo de juego (o global si tipoJuego es null)
 final podioFamiliarProvider = FutureProvider.family<PodioFamiliarRespuestaModel, String?>((ref, tipoJuego) async {
+  ref.watch(authNotifierProvider.select((s) => s.user?.id));
   final repo = ref.watch(juegoRepositoryProvider);
   return repo.getPodioFamiliar(tipoJuego: tipoJuego);
 });

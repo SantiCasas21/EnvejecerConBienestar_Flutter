@@ -9,7 +9,10 @@ class AuthInterceptor extends Interceptor {
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
-    if (options.path.contains('/auth/login') || options.path.contains('/auth/register')) {
+    if (options.path.contains('/auth/login') ||
+        options.path.contains('/auth/register') ||
+        options.path.contains('/auth/google') ||
+        options.path.contains('/auth/refresh')) {
       return super.onRequest(options, handler);
     }
 
@@ -32,8 +35,8 @@ class ErrorInterceptor extends Interceptor {
   void onError(DioException err, ErrorInterceptorHandler handler) async {
     if (err.response?.statusCode == 401 && !err.requestOptions.path.contains('/auth/refresh')) {
       final refreshToken = await storageService.getRefreshToken();
-      
-      if (refreshToken != null) {
+
+      if (refreshToken != null && refreshToken.isNotEmpty) {
         try {
           final response = await dio.post(
             '/auth/refresh',
@@ -50,29 +53,33 @@ class ErrorInterceptor extends Interceptor {
             );
 
             err.requestOptions.headers['Authorization'] = 'Bearer $newAccessToken';
-            
+
             final opts = Options(
               method: err.requestOptions.method,
               headers: err.requestOptions.headers,
             );
-            
+
             final retryResponse = await dio.request(
               err.requestOptions.path,
               options: opts,
               data: err.requestOptions.data,
               queryParameters: err.requestOptions.queryParameters,
             );
-            
+
             return handler.resolve(retryResponse);
           }
-        } catch (e) {
-          await storageService.clearTokens();
-        }
+        } on DioException catch (refreshErr) {
+          // Solo borramos sesión si el refresh token fue explícitamente rechazado (401/422)
+          final code = refreshErr.response?.statusCode;
+          if (code == 401 || code == 422) {
+            await storageService.clearTokens();
+          }
+        } catch (_) {}
       } else {
         await storageService.clearTokens();
       }
     }
-    
+
     return super.onError(err, handler);
   }
 }

@@ -42,28 +42,52 @@ class AuthNotifier extends _$AuthNotifier {
   }
 
   Future<void> _checkAuthStatus() async {
+    final storage = ref.read(secureStorageServiceProvider);
+    final repo = ref.read(authRepositoryProvider);
+
     try {
-      final storage = ref.read(secureStorageServiceProvider);
       final token = await storage.getAccessToken().timeout(
         const Duration(seconds: 2),
         onTimeout: () => null,
       );
+      final refreshToken = await storage.getRefreshToken().timeout(
+        const Duration(seconds: 2),
+        onTimeout: () => null,
+      );
 
-      if (token == null || token.isEmpty) {
+      if ((token == null || token.isEmpty) && (refreshToken == null || refreshToken.isEmpty)) {
         state = AuthState(status: AuthStatus.unauthenticated, user: null);
         return;
       }
 
-      final user = await ref.read(authRepositoryProvider).getMe().timeout(
-        const Duration(seconds: 3),
-        onTimeout: () => null,
-      );
+      // Arranque instantáneo (0ms): restaurar usuario cacheado sin esperar el cold start de la nube
+      final cachedUser = await repo.getCachedUser();
+      if (cachedUser != null) {
+        state = AuthState(status: AuthStatus.authenticated, user: cachedUser);
+      }
 
-      if (user != null) {
-        state = AuthState(status: AuthStatus.authenticated, user: user);
-      } else {
-        await storage.clearTokens();
-        state = AuthState(status: AuthStatus.unauthenticated, user: null);
+      // Sincronizar con el servidor en segundo plano (timeout generoso de 15s)
+      try {
+        final user = await repo.getMe().timeout(const Duration(seconds: 15));
+        if (user != null) {
+          state = AuthState(status: AuthStatus.authenticated, user: user);
+        } else if (cachedUser == null) {
+          state = AuthState(status: AuthStatus.unauthenticated, user: null);
+        }
+      } on DioException catch (e) {
+        final code = e.response?.statusCode;
+        // Solo cerramos sesión si el servidor rechazó explícitamente la credencial (401/422 tras intentar refresh)
+        if (code == 401 || code == 422) {
+          await storage.clearTokens();
+          state = AuthState(status: AuthStatus.unauthenticated, user: null);
+        } else if (cachedUser == null) {
+          state = AuthState(status: AuthStatus.unauthenticated, user: null);
+        }
+      } catch (_) {
+        // En timeout o caída temporal de red, conservamos la sesión cacheada si existe
+        if (cachedUser == null) {
+          state = AuthState(status: AuthStatus.unauthenticated, user: null);
+        }
       }
     } catch (_) {
       state = AuthState(status: AuthStatus.unauthenticated, user: null);

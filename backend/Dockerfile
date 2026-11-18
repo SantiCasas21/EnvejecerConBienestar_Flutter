@@ -29,5 +29,5 @@ COPY . .
 # Exponer puerto
 EXPOSE 8080
 
-# Comando por defecto: ejecutar con gunicorn en producción (compatible con $PORT de Cloud Run)
-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 2 --threads 4 --timeout 120 run:app"]
+# Comando por defecto: 1 worker + 8 hilos optimiza el arranque en frío (cold start) en Cloud Run
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 1 --threads 8 --timeout 120 run:app"]
